@@ -25,7 +25,19 @@
               <span class="text-muted">(10)</span>
             </div>
             <!-- 添加一个自定义的“加入购物车”按钮 -->
-            <button class="btn btn-outline-primary mt-auto">加入购物车</button>
+            <button
+              @click="addToCart(product)"
+              class="btn btn-outline-primary mt-auto"
+            >
+              加入购物车
+            </button>
+            <!-- 添加一个自定义的“移除购物车”按钮 -->
+            <button
+              @click="removeFromCart(product)"
+              class="btn btn-outline-danger mt-2"
+            >
+              移除购物车
+            </button>
           </div>
         </div>
       </div>
@@ -54,7 +66,7 @@ export default {
           "http://127.0.0.1:8000/api/products/",
           {
             headers: {
-              Authorization: `Token ${token}`, // 这里携带了Token
+              Authorization: `Token ${token}`,
             },
           }
         );
@@ -62,6 +74,45 @@ export default {
       } catch (error) {
         console.error("Failed to fetch products:", error);
         this.error = "无法加载产品列表，请重试";
+      }
+    },
+    async addToCart(product) {
+      try {
+        const token = localStorage.getItem("token");
+        await axios.post(
+          "http://127.0.0.1:8000/api/cart/add_item/",
+          {
+            product_id: product.product_id, // 确保使用正确的字段
+            quantity: 1, // 或用户选择的数量
+          },
+          {
+            headers: {
+              Authorization: `Token ${token}`,
+            },
+          }
+        );
+        this.fetchCartItems();
+      } catch (error) {
+        this.error = "无法添加商品，请重试";
+      }
+    },
+
+    async removeFromCart(product) {
+      try {
+        const token = localStorage.getItem("token");
+        await axios.post(
+          "http://127.0.0.1:8000/api/cart/remove_item/",
+          { product_id: product.product_id }, // 修改为product.product_id
+          {
+            headers: {
+              Authorization: `Token ${token}`,
+            },
+          }
+        );
+        alert(`${product.product_name} 已从购物车中移除`);
+      } catch (error) {
+        console.error("Failed to remove item from cart:", error);
+        alert("无法将商品从购物车中移除，请重试");
       }
     },
   },
@@ -95,8 +146,10 @@ export default {
   margin-bottom: 1rem;
 }
 
-.btn-outline-primary {
+.btn-outline-primary,
+.btn-outline-danger {
   border-radius: 50px;
+  width: 100%;
 }
 
 .badge {

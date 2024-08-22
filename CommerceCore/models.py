@@ -51,6 +51,7 @@ class Category(models.Model):
         return self.category_name
 
 class Product(models.Model):
+    product_id = models.AutoField(verbose_name="商品ID", primary_key=True)
     product_name = models.CharField(verbose_name="商品名称", max_length=100)
     image = models.ImageField(verbose_name="商品图片", upload_to='product_images/', default='category_images/default.jpg')
     click = models.IntegerField(verbose_name="点击量", default=0)
@@ -66,6 +67,8 @@ class Product(models.Model):
     def __str__(self):
         return self.product_name
 
+
+
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="用户")
     order_date = models.DateTimeField(verbose_name="订单时间", auto_now_add=True)
@@ -78,11 +81,11 @@ class Order(models.Model):
 
 class OrderDetail(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, verbose_name="订单")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="商品")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="商品", to_field='product_id')
     quantity = models.IntegerField(verbose_name="数量")
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="单价")
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="总价",default=0)
-    address = models.CharField(max_length=255, verbose_name="地址", blank=True,default="")
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="总价", default=0)
+    address = models.CharField(max_length=255, verbose_name="地址", blank=True, default="")
 
     def __str__(self):
         return f"Detail for Order {self.order.id}"
@@ -96,8 +99,8 @@ class ShoppingCart(models.Model):
 
 class CartItem(models.Model):
     cart = models.ForeignKey(ShoppingCart, on_delete=models.CASCADE, verbose_name="购物车")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="商品")
-    quantity = models.IntegerField(verbose_name="数量")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="商品", to_field='product_id')
+    quantity = models.IntegerField(verbose_name="数量", default=1)
 
     def __str__(self):
         return f"CartItem {self.id} in Cart {self.cart.id}"
@@ -113,7 +116,7 @@ class Payment(models.Model):
 
 class GoodsBrowser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="用户")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="商品")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="商品", to_field='product_id')
     browse_date = models.DateTimeField(auto_now_add=True, verbose_name="浏览时间")
 
     def __str__(self):
