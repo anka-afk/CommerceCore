@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>首页 - 我的电子商务网站</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+  </head>
+  <body>
+    <!-- 导航栏 -->
+    <nav>
+      <ul>
+        <li><a href="/">首页</a></li>
+        <li><a href="/products/">所有商品</a></li>
+        <li><a href="/category/1/">分类1</a></li>
+        <li><a href="/category/2/">分类2</a></li>
+        <li><a href="/cart/">购物车</a></li>
+        <li><a href="/profile/">我的账户</a></li>
+        <li><a href="/login/">登录</a></li>
+      </ul>
+    </nav>
+
+    <!-- 横幅广告 -->
+    <section id="banner">
+      <h1>欢迎来到我们的电子商务平台</h1>
+      <p>浏览我们的最新商品和促销活动！</p>
+      <a href="/products/" class="btn">现在购物</a>
+    </section>
+
+    <!-- 特色商品 -->
+    <section id="featured-products">
+      <h2>特色商品</h2>
+      <div class="product-grid">
+        {% for product in featured_products %}
+        <div class="product-item">
+          <a href="/products/{{ product.id }}/">
+            <img
+              src="{{ product.image.url }}"
+              alt="{{ product.product_name }}"
+            />
+            <h3>{{ product.product_name }}</h3>
+            <p>¥{{ product.price }}</p>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- 最新上架商品 -->
+    <section id="new-arrivals">
+      <h2>最新上架</h2>
+      <div class="product-grid">
+        {% for product in new_arrivals %}
+        <div class="product-item">
+          <a href="/products/{{ product.id }}/">
+            <img
+              src="{{ product.image.url }}"
+              alt="{{ product.product_name }}"
+            />
+            <h3>{{ product.product_name }}</h3>
+            <p>¥{{ product.price }}</p>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer>
+      <p>&copy; 2024 我的电子商务网站. 保留所有权利.</p>
+      <ul>
+        <li><a href="/">首页</a></li>
+        <li><a href="/about/">关于我们</a></li>
+        <li><a href="/contact/">联系我们</a></li>
+        <li><a href="/privacy/">隐私政策</a></li>
+      </ul>
+    </footer>
+  </body>
+</html>

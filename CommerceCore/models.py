@@ -1,14 +1,43 @@
 from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
-class User(models.Model):
+class CustomUserManager(BaseUserManager):
+    def create_user(self, username, email=None, password=None, **extra_fields):
+        if not username:
+            raise ValueError('The Username field must be set')
+        email = self.normalize_email(email)
+        user = self.model(username=username, email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self.create_user(username, email, password, **extra_fields)
+
+class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(verbose_name="用户名称", max_length=50, unique=True, blank=False)
     sex = models.CharField(verbose_name="性别", max_length=10, blank=True)
     password = models.CharField(verbose_name="密码", max_length=255, blank=False)
     email = models.EmailField(verbose_name="邮箱", unique=True, blank=True)
     phone_number = models.CharField(verbose_name="电话号码", max_length=20, blank=False)
     tel = models.CharField(verbose_name="联系方式", max_length=20, blank=True)
-    address = models.CharField(verbose_name="地址", max_length=255, blank=True,default="")
+    address = models.CharField(verbose_name="地址", max_length=255, blank=True, default="")
     registration_date = models.DateTimeField(verbose_name="注册时间", auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
+    objects = CustomUserManager()
+
+    USERNAME_FIELD = 'username'  # 可以改为 'email' 如果你想用邮箱作为登录标识符
+    REQUIRED_FIELDS = ['email']  # 必填字段，除了 USERNAME_FIELD
 
     def __str__(self):
         return self.username
