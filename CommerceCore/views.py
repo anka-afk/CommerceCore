@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from .models import Product,ShoppingCart,Order,OrderDetail,Payment,CartItem,User
+from .models import Product,ShoppingCart,Order,OrderDetail,Payment,Category,CartItem,User
 from rest_framework import viewsets,serializers
-from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer,UserSerializer
+from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer,UserSerializer,CategorySerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -13,6 +13,8 @@ from rest_framework.decorators import action
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 import logging
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,9 @@ class CustomAuthToken(ObtainAuthToken):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['category']  # 支持根据分类进行筛选
+    search_fields = ['product_name', 'description']  # 支持搜索商品名称和描述
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.ReadOnlyField(source='product.product_name')
@@ -108,8 +113,14 @@ class ShoppingCartViewSet(viewsets.ViewSet):
             return Response({'status': 'quantity updated'}, status=status.HTTP_200_OK)
         except CartItem.DoesNotExist:
             return Response({'error': 'Item not found in cart'}, status=status.HTTP_404_NOT_FOUND)
-        
+
+class CatagoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
 class UserViewSet(viewsets.ViewSet):
+    
+
     permission_classes = [IsAuthenticated]
     
     def retrieve(self, request, pk=None):

@@ -45,7 +45,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Category(models.Model):
     category_name = models.CharField(verbose_name="分类名称", max_length=100)
     description = models.TextField(verbose_name="分类描述", blank=True)
-    image = models.ImageField(verbose_name="分类图片", upload_to='category_images/', default='category_images/default.jpg')
+    image = models.ImageField(verbose_name="分类图片", upload_to='category_images/', default='avatars/default.png')
     
     def __str__(self):
         return self.category_name
@@ -53,7 +53,7 @@ class Category(models.Model):
 class Product(models.Model):
     product_id = models.AutoField(verbose_name="商品ID", primary_key=True)
     product_name = models.CharField(verbose_name="商品名称", max_length=100)
-    image = models.ImageField(verbose_name="商品图片", upload_to='product_images/', default='category_images/default.jpg')
+    image = models.ImageField(verbose_name="商品图片", upload_to='product_images/', default='avatars/default.png')
     click = models.IntegerField(verbose_name="点击量", default=0)
     unit = models.CharField(verbose_name="单位重量", max_length=20, default="500g")
     description = models.TextField(verbose_name="商品描述", blank=True)
@@ -63,6 +63,7 @@ class Product(models.Model):
     category = models.ForeignKey(Category, verbose_name="类别", on_delete=models.CASCADE)
     listing_date = models.DateTimeField(verbose_name="上架时间", auto_now_add=True)
     suggest = models.BooleanField(verbose_name="推荐", default=False)
+    score = models.IntegerField(verbose_name="评分", default=0)
 
     def __str__(self):
         return self.product_name
@@ -124,7 +125,7 @@ class GoodsBrowser(models.Model):
     
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    avatar = models.ImageField(upload_to='avatars/', default='avatars/default.jpg', verbose_name="头像")
+    avatar = models.ImageField(upload_to='avatars/', default='avatars/default.png', verbose_name="头像")
     birthdate = models.DateField(null=True, blank=True, verbose_name="生日")
     bio = models.TextField(blank=True, verbose_name="个人简介")
 

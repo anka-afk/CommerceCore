@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import Product, ShoppingCart, CartItem,User,UserProfile
+from .models import Product, ShoppingCart, CartItem,User,UserProfile,Category
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,8 +25,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = ['avatar', 'birthdate', 'bio']
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'category_name', 'description', 'image']
 
 class UserSerializer(serializers.ModelSerializer):
+    
+
     profile = UserProfileSerializer()
 
     class Meta:
