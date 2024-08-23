@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import Product,ShoppingCart,Order,OrderDetail,Payment,Category,CartItem,User
+from .models import Product,ShoppingCart,Order,OrderDetail,Payment,Category,CartItem,User,UserProfile
 from rest_framework import viewsets,serializers
 from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer,UserSerializer,CategorySerializer
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -119,32 +119,59 @@ class CatagoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
 
 class UserViewSet(viewsets.ViewSet):
-    
-
     permission_classes = [IsAuthenticated]
-    
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
     def retrieve(self, request, pk=None):
-        user = self.get_object()
+        user = request.user  # 使用 request.user 获取当前用户
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
     def update(self, request, pk=None):
-        user = self.get_object()
+        user = request.user  # 使用 request.user 获取当前用户
         serializer = UserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     @action(detail=False, methods=['get', 'patch'], url_path='profile')
     def profile(self, request):
         user = request.user
         if request.method == 'PATCH':
-            serializer = UserSerializer(user, data=request.data, partial=True)
+            # 创建 request.data 的可变副本
+            mutable_data = request.data.copy()
+
+            # 更新用户信息
+            serializer = UserSerializer(user, data=mutable_data, partial=True)
             if serializer.is_valid():
                 serializer.save()
+
+                # 处理头像更新
+                if 'avatar' in request.FILES:
+                    user.profile.avatar = request.FILES['avatar']
+                    user.profile.save()
+
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             serializer = UserSerializer(user)
             return Response(serializer.data)
+    @action(detail=False, methods=['post'], url_path='upload-avatar')
+    def upload_avatar(self, request):
+        user = request.user
+        if 'avatar' in request.data:
+            user.profile.avatar = request.data['avatar']
+            user.profile.save()
+            return Response({'avatar': user.profile.avatar.url}, status=status.HTTP_200_OK)
+        return Response({'error': 'Avatar file not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='delete-account')
+    def delete_account(self, request):
+        user = request.user
+        password = request.data.get('password')
+        if not user.check_password(password):
+            return Response({'error': 'Password incorrect'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.delete()
+        return Response({'status': 'Account deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

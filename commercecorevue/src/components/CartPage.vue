@@ -47,7 +47,7 @@
           </router-link>
         </div>
         <img
-          src="user-avatar.jpg"
+          :src="avatarUrl || 'default-avatar.jpg'"
           class="user-avatar"
           @click="goToAccount"
           alt="User Avatar"
@@ -57,55 +57,43 @@
 
     <!-- 购物车内容 -->
     <section class="cart-section">
-      <h2>购物车</h2>
-      <div v-if="cartItems.length > 0" class="cart-container">
-        <table class="cart-table">
-          <thead>
-            <tr>
-              <th>商品</th>
-              <th>单价</th>
-              <th>数量</th>
-              <th>小计</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in cartItems" :key="item.id">
-              <td class="product-details">
-                <img
-                  :src="item.product.image"
-                  alt="商品图片"
-                  class="product-img"
-                />
-                <span>{{ item.product.product_name }}</span>
-              </td>
-              <td>{{ item.product.price }} 元</td>
-              <td>
-                <input
-                  type="number"
-                  v-model.number="item.quantity"
-                  @change="updateQuantity(item)"
-                  min="1"
-                  class="quantity-input"
-                />
-              </td>
-              <td>{{ item.product.price * item.quantity }} 元</td>
-              <td>
-                <button class="btn btn-danger" @click="removeItem(item)">
-                  移除
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <h2>您的购物车</h2>
+      <div v-if="cartItems.length === 0">您的购物车是空的。</div>
+      <div v-else class="cart-items-container">
+        <div
+          class="cart-item-card"
+          v-for="item in cartItems"
+          :key="item.product.product_id"
+        >
+          <div class="cart-item-content">
+            <!-- 修改图片的 src 绑定 -->
+            <img
+              :src="`${mediaUrl}${item.product.image}`"
+              alt="商品图片"
+              class="cart-item-image"
+            />
+            <div class="cart-item-details">
+              <h4 class="cart-item-name">{{ item.product.product_name }}</h4>
+              <p>单价: {{ item.product.price }} 元</p>
+              <p>
+                数量:
+                <button @click="decreaseQuantity(item)">-</button>
+                <span>{{ item.quantity }}</span>
+                <button @click="increaseQuantity(item)">+</button>
+              </p>
+              <p>
+                总计: {{ (item.product.price * item.quantity).toFixed(2) }} 元
+              </p>
+              <button class="btn btn-danger" @click="removeFromCart(item)">
+                移除
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="cart-summary">
-          <p>总计: {{ cartTotal }} 元</p>
+          <p>总金额: {{ totalAmount.toFixed(2) }} 元</p>
           <button class="btn btn-primary" @click="checkout">结算</button>
         </div>
-      </div>
-      <div v-else class="empty-cart">
-        <p>您的购物车是空的。</p>
-        <router-link to="/products" class="btn btn-primary">去购物</router-link>
       </div>
     </section>
 
@@ -119,148 +107,124 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   data() {
     return {
-      cartItems: [], // 购物车商品列表
+      cartItems: [],
+      mediaUrl: "http://localhost:8000", // 将其设置为你的后端基础 URL，省略 /media/
+      userProfile: null, // 用户信息对象
+      avatarUrl: null, // 头像URL
     };
   },
   computed: {
-    cartTotal() {
+    totalAmount() {
       return this.cartItems.reduce(
         (total, item) => total + item.product.price * item.quantity,
         0
       );
     },
   },
+  mounted() {
+    this.fetchCartItems();
+    this.fetchUserProfile(); // 添加获取用户信息的方法
+  },
   methods: {
     fetchCartItems() {
-      // 这里可以调用API获取购物车商品列表
-      // 模拟数据
-      this.cartItems = [
-        {
-          id: 1,
-          product: {
-            product_name: "商品1",
-            price: 100,
-            image: "../assets/product1.png",
-          },
-          quantity: 2,
-        },
-        {
-          id: 2,
-          product: {
-            product_name: "商品2",
-            price: 200,
-            image: "../assets/product2.png",
-          },
-          quantity: 1,
-        },
-      ];
+      axios
+        .get("http://127.0.0.1:8000/api/cart/")
+        .then((response) => {
+          this.cartItems = response.data.items;
+        })
+        .catch((error) => {
+          console.error("Failed to fetch cart items:", error);
+        });
     },
-    updateQuantity(item) {
-      // 更新商品数量的逻辑
-      if (item.quantity < 1) {
-        item.quantity = 1;
+    fetchUserProfile() {
+      axios
+        .get("http://localhost:8000/api/user/profile/")
+        .then((response) => {
+          this.userProfile = response.data.profile; // 假设返回的数据中包含用户profile信息
+          this.avatarUrl = `${this.mediaUrl}${this.userProfile.avatar}`;
+        })
+        .catch((error) => {
+          console.error("Failed to fetch user profile:", error);
+        });
+    },
+    increaseQuantity(item) {
+      axios
+        .post("http://127.0.0.1:8000/api/cart/update_quantity/", {
+          product_id: item.product.product_id,
+          quantity: item.quantity + 1,
+        })
+        .then(() => {
+          item.quantity++;
+        })
+        .catch((error) => {
+          console.error("Failed to update quantity:", error);
+        });
+    },
+    decreaseQuantity(item) {
+      if (item.quantity > 1) {
+        axios
+          .post("http://127.0.0.1:8000/api/cart/update_quantity/", {
+            product_id: item.product.product_id,
+            quantity: item.quantity - 1,
+          })
+          .then(() => {
+            item.quantity--;
+          })
+          .catch((error) => {
+            console.error("Failed to update quantity:", error);
+          });
       }
-      // 可以在这里发送API请求更新购物车数量
     },
-    removeItem(item) {
-      // 从购物车中移除商品的逻辑
-      this.cartItems = this.cartItems.filter((i) => i.id !== item.id);
-      // 可以在这里发送API请求移除商品
+    removeFromCart(item) {
+      axios
+        .post("http://127.0.0.1:8000/api/cart/remove_item/", {
+          product_id: item.product.product_id,
+        })
+        .then(() => {
+          this.cartItems = this.cartItems.filter(
+            (cartItem) =>
+              cartItem.product.product_id !== item.product.product_id
+          );
+        })
+        .catch((error) => {
+          console.error("Failed to remove item from cart:", error);
+        });
     },
     checkout() {
-      // 结算的逻辑
-      alert("结算成功！");
-      // 可以在这里发送API请求进行结算处理
+      alert("结算功能暂未实现"); // 结算逻辑根据需要实现
     },
-  },
-  mounted() {
-    this.fetchCartItems(); // 获取购物车商品列表
+    goToAccount() {
+      this.$router.push("/account");
+    },
   },
 };
 </script>
-
 <style scoped>
-/* 购物车内容 */
-.cart-section {
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  margin: 2rem auto;
-  max-width: 1000px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* 通用容器样式 */
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
 }
 
-.cart-container {
-  overflow-x: auto;
-}
-
-.cart-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 1.5rem;
-}
-
-.cart-table th,
-.cart-table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
-
-.product-details {
-  display: flex;
-  align-items: center;
-}
-
-.product-img {
-  width: 50px;
-  height: 50px;
-  margin-right: 1rem;
-}
-
-.quantity-input {
-  width: 60px;
-  padding: 0.3rem;
-  text-align: center;
-}
-
-.cart-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 1.25rem;
-}
-
-.cart-summary p {
-  margin: 0;
-}
-
-.empty-cart {
-  text-align: center;
-  font-size: 1.5rem;
-  color: #777;
-}
-
-.empty-cart p {
-  margin-bottom: 2rem;
-}
-
-.empty-cart .btn {
-  font-size: 1rem;
-}
-</style>
-
-<style scoped>
 /* 设置背景图片覆盖整个网页，并固定不动 */
 .app-container {
-  min-height: 100vh; /* 确保背景覆盖整个页面，包括滚动后部分 */
+  min-height: 100vh;
   background: url("../assets/background.jpg") no-repeat center center fixed;
   background-size: cover;
   display: flex;
   flex-direction: column;
+}
+
+/* 毛玻璃效果的通用样式 */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
 }
 
 /* 导航栏毛玻璃效果 */
@@ -285,36 +249,33 @@ export default {
 }
 
 .brand-name {
-  font-size: 1.5rem; /* 增加字体大小 */
-  font-family: "Microsoft Yahei UI light", cursive; /* 示例字体，你可以替换成你喜欢的字体 */
-  color: #007bff; /* 文字颜色 */
+  font-size: 1.5rem;
+  font-family: "Microsoft Yahei UI light", cursive;
+  color: #007bff;
   font-weight: bold;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* 添加轻微阴影 */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
   transition: color 0.3s ease, transform 0.3s ease;
 }
 
 .brand-name:hover {
-  color: #0056b3; /* 悬停时改变颜色 */
-  transform: scale(1.05); /* 悬停时轻微放大 */
-}
-
-.navbar-brand {
-  font-size: 1.5rem;
-  color: #007bff;
+  color: #0056b3;
+  transform: scale(1.05);
 }
 
 .navbar-menu {
   display: flex;
   justify-content: space-between;
-  align-items: center; /* 确保菜单内元素垂直居中 */
-  flex: 1; /* 占满剩余空间 */
+  align-items: center;
+  flex: 1;
 }
+
 .nav-links {
   display: flex;
   justify-content: center;
-  flex: 1; /* 居中对齐并占据可用空间 */
-  gap: 15px; /* 控制链接之间的间距 */
+  flex: 1;
+  gap: 15px;
 }
+
 .nav-link {
   display: flex;
   align-items: center;
@@ -325,18 +286,13 @@ export default {
   transition: background 0.3s, color 0.3s;
   border-radius: 20px;
 }
-.nav-link:hover {
-  background: #e0f7e9;
-  color: #28a745;
-}
-.nav-link i {
-  margin-right: 0.4rem; /* 缩小图标和文字之间的间距 */
-  font-size: 1.1rem; /* 减小图标尺寸 */
-}
+
+.nav-link:hover,
 .nav-link.active {
   background: #e0f7e9;
   color: #28a745;
 }
+
 .nav-icon {
   width: 20px;
   height: 20px;
@@ -350,6 +306,7 @@ export default {
   color: #007bff;
   margin-right: 1rem;
   cursor: pointer;
+  transition: background 0.3s, color 0.3s;
 }
 
 .btn-contact:hover {
@@ -365,10 +322,12 @@ export default {
   border: 2px solid #28a745;
   transition: border 0.3s, transform 0.3s;
 }
+
 .user-avatar:hover {
   border-color: #1e7e34;
   transform: scale(1.1);
 }
+
 /* 中间块 */
 .center-block {
   flex: 1;
@@ -380,10 +339,8 @@ export default {
 }
 
 .center-content {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
+  @extend .glass-effect;
   padding: 2rem;
-  border-radius: 10px;
   text-align: center;
   color: #333;
 }
@@ -398,38 +355,130 @@ export default {
   margin-bottom: 2rem;
 }
 
+/* 购物车样式 */
+.cart-items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cart-section {
+  @extend .glass-effect;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 2rem auto;
+}
+
+.cart-item-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(5px);
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 600px;
+}
+
+.cart-item-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.cart-item-image {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-right: 1rem;
+}
+
+.cart-item-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cart-item-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.cart-item-actions button {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.cart-item-actions button:hover {
+  background-color: #f0f0f0;
+}
+
+.cart-item-price {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.cart-summary {
+  margin-top: 2rem;
+  text-align: right;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
 /* 产品展示 */
 .product-section {
   flex: 1;
   display: flex;
-  justify-content: center; /* 水平方向居中 */
-  align-items: center; /* 垂直方向居中 */
+  justify-content: center;
+  align-items: center;
   padding: 2rem;
-  background: transparent; /* 确保背景透明 */
+  background: transparent;
 }
 
-/* 容器居中，设置最大宽度 */
 .product-container {
   display: flex;
-  justify-content: center; /* 子元素水平居中 */
-  align-items: center; /* 子元素垂直居中 */
-  max-width: 1600px; /* 设置最大宽度以防止过度拉伸 */
-  flex-wrap: flex; /* 当内容过多时不换行 */
-  gap: 20px; /* 增加卡片之间的间距 */
+  justify-content: center;
+  align-items: center;
+  max-width: 1600px;
+  flex-wrap: flex;
+  gap: 20px;
 }
 
-/* 商品卡片容器 */
 .product-card-container {
-  flex: 0 1 300px; /* 控制卡片宽度并允许换行 */
+  flex: 0 1 300px;
 }
 
-/* 商品卡片样式 */
 .product-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border: none;
-  border-radius: 10px;
+  @extend .glass-effect;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   height: 100%;
+  min-height: 420px;
+}
+
+.card-body {
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -452,6 +501,7 @@ export default {
   margin-bottom: 0.5rem;
 }
 
+/* 推荐标签的样式 */
 .recommended-label {
   display: inline-block;
   background: #28a745;
@@ -468,7 +518,7 @@ export default {
 }
 
 .star {
-  color: #ffd700; /* 金色 */
+  color: #ffd700;
   font-size: 1.25rem;
 }
 
@@ -477,7 +527,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 20px; /* 增加间距 */
+  margin-top: 20px;
 }
 
 .slider-arrow {
@@ -520,17 +570,51 @@ export default {
   color: white;
   text-align: center;
   padding: 1rem;
-}
-
-.container {
-  max-width: 1140px;
-  margin: 0 auto;
+  margin-top: auto;
 }
 
 /* 模态框 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
 .modal-content {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+  @extend .glass-effect;
+  padding: 20px;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  overflow-y: auto;
+  max-height: 80vh;
+}
+
+/* 模态框内容图片 */
+.modal-image {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 15px;
+}
+
+.modal-details {
+  text-align: left;
+}
+
+.details-container {
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 15px;
 }
 
 /* 动画效果 */
@@ -540,7 +624,7 @@ export default {
 }
 
 .slide-fade-enter,
-.slide-fade-leave-to /* .slide-fade-leave-active for <2.1.8 */ {
+.slide-fade-leave-to {
   transform: translateX(20px);
   opacity: 0;
 }

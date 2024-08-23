@@ -47,7 +47,7 @@
           </router-link>
         </div>
         <img
-          src="user-avatar.jpg"
+          :src="avatarUrl"
           class="user-avatar"
           @click="goToAccount"
           alt="User Avatar"
@@ -55,28 +55,29 @@
       </div>
     </nav>
 
-    <!-- 商店内容 -->
-    <section class="shop-section">
-      <div class="filters">
-        <select v-model="selectedCategory" @change="fetchProducts">
-          <option value="">所有分类</option>
-          <option
-            v-for="category in categories"
-            :key="category.id"
-            :value="category.id"
-          >
-            {{ category.category_name }}
-          </option>
-        </select>
-        <input
-          type="text"
-          v-model="searchQuery"
-          placeholder="搜索商品..."
-          @input="fetchProducts"
-        />
-      </div>
+    <!-- 搜索和筛选 -->
+    <div class="search-filter-container">
+      <select v-model="selectedCategory" @change="fetchProducts">
+        <option value="">所有分类</option>
+        <option
+          v-for="category in categories"
+          :key="category.id"
+          :value="category.id"
+        >
+          {{ category.category_name }}
+        </option>
+      </select>
+      <input
+        v-model="searchTerm"
+        placeholder="搜索商品..."
+        @input="fetchProducts"
+      />
+    </div>
 
-      <div class="shop-container">
+    <!-- 产品展示 -->
+    <section class="product-section">
+      <div v-if="filteredProducts.length === 0">没有找到符合条件的商品。</div>
+      <transition-group name="slide-fade" tag="div" class="product-container">
         <div
           class="product-card-container"
           v-for="product in paginatedProducts"
@@ -87,42 +88,98 @@
               :src="product.image"
               class="card-img-top"
               :alt="product.product_name"
+              @click="showProductDetails(product)"
               @error="handleImageError($event)"
             />
             <div class="card-body d-flex flex-column">
               <h5 class="card-title">{{ product.product_name }}</h5>
               <p class="card-text">{{ product.description }}</p>
-              <p class="product-price">{{ product.price }} 元</p>
-              <div class="mt-auto">
-                <button class="btn btn-primary" @click="addToCart(product)">
-                  加入购物车
-                </button>
+              <div class="product-score mb-2">
+                <span v-for="n in product.score" :key="n" class="star filled"
+                  >★</span
+                >
+                <span v-for="n in 5 - product.score" :key="n" class="star"
+                  >☆</span
+                >
               </div>
+              <span v-if="product.suggest" class="recommended-label">推荐</span>
+              <p class="price">{{ product.price }} 元</p>
+              <button
+                class="btn btn-primary mt-auto"
+                @click="addToCart(product)"
+              >
+                添加到购物车
+              </button>
+              <button
+                class="btn btn-secondary mt-2"
+                @click="showProductDetails(product)"
+              >
+                > 查看详情
+              </button>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- 分页控制 -->
-      <div class="pagination-controls">
-        <button
-          class="btn-pagination"
-          @click="prevPage"
-          :disabled="currentPage === 0"
-        >
-          &lt; 上一页
-        </button>
-        <span>第 {{ currentPage + 1 }} 页 / 共 {{ totalPages }} 页</span>
-        <button
-          class="btn-pagination"
-          @click="nextPage"
-          :disabled="currentPage === totalPages - 1"
-        >
-          下一页 &gt;
-        </button>
-      </div>
+      </transition-group>
     </section>
 
+    <!-- 弹出窗口 -->
+    <div v-if="showModal" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <h3>{{ selectedProduct.product_name }}</h3>
+        <img
+          :src="selectedProduct.image"
+          alt="Product Image"
+          class="modal-image"
+        />
+        <div class="modal-details">
+          <p><strong>商品描述:</strong> {{ selectedProduct.description }}</p>
+          <p><strong>商品详情:</strong></p>
+          <div class="details-container">{{ selectedProduct.details }}</div>
+          <p><strong>价格:</strong> {{ selectedProduct.price }} 元</p>
+          <p><strong>库存数量:</strong> {{ selectedProduct.stock_quantity }}</p>
+          <p><strong>单位:</strong> {{ selectedProduct.unit }}</p>
+          <p><strong>销量:</strong> {{ selectedProduct.sales }}</p>
+          <p>
+            <strong>评分:</strong> {{ selectedProduct.score }} / 5 ({{
+              selectedProduct.rating_count
+            }}
+            人评分)
+          </p>
+          <p>
+            <strong>类别:</strong> {{ selectedProduct.category.category_name }}
+          </p>
+          <p>
+            <strong>上架时间:</strong>
+            {{ formatDate(selectedProduct.listing_date) }}
+          </p>
+          <span v-if="selectedProduct.suggest" class="recommended-label"
+            >推荐</span
+          >
+        </div>
+        <button class="btn btn-secondary" @click="closeModal">关闭</button>
+      </div>
+    </div>
+
+    <!-- 滑动控制箭头 -->
+    <div class="slider-controls">
+      <button
+        class="slider-arrow"
+        @click="prevPage"
+        :disabled="currentPage === 1"
+      >
+        &lt; 上一页
+      </button>
+      <div class="pagination">
+        第 {{ currentPage }} 页 / 共 {{ totalPages }} 页
+      </div>
+      <button
+        class="slider-arrow"
+        @click="nextPage"
+        :disabled="currentPage === totalPages"
+      >
+        下一页 &gt;
+      </button>
+    </div>
     <!-- 页脚 -->
     <footer class="footer">
       <div class="container">
@@ -138,189 +195,255 @@ import axios from "axios";
 export default {
   data() {
     return {
-      products: [], // 商品列表
-      categories: [], // 分类列表
-      selectedCategory: "", // 选中的分类
-      searchQuery: "", // 搜索关键词
-      currentPage: 0, // 当前页面
-      itemsPerPage: 9, // 每页显示商品数量
+      products: [],
+      categories: [],
+      searchTerm: "",
+      selectedCategory: "",
+      currentPage: 1,
+      itemsPerPage: 9,
+      mediaUrl: "http://localhost:8000",
+      userProfile: null,
+      avatarUrl: null,
+      showModal: false, // 控制模态框显示
+      selectedProduct: null, // 当前选中的商品
     };
   },
   computed: {
-    paginatedProducts() {
-      const start = this.currentPage * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
-      return this.products.slice(start, end);
+    filteredProducts() {
+      let filtered = this.products;
+      if (this.selectedCategory) {
+        filtered = filtered.filter(
+          (product) => product.category === parseInt(this.selectedCategory)
+        );
+      }
+      if (this.searchTerm) {
+        filtered = filtered.filter((product) =>
+          product.product_name.includes(this.searchTerm)
+        );
+      }
+      return filtered;
     },
     totalPages() {
-      return Math.ceil(this.products.length / this.itemsPerPage);
+      return Math.ceil(this.filteredProducts.length / this.itemsPerPage);
+    },
+    paginatedProducts() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.filteredProducts.slice(start, end);
     },
   },
+  mounted() {
+    this.fetchCategories();
+    this.fetchProducts();
+    this.fetchUserProfile(); // 添加获取用户信息的方法
+  },
   methods: {
-    async fetchProducts() {
-      const params = {
-        category: this.selectedCategory,
-        search: this.searchQuery,
-      };
-
-      try {
-        const response = await axios.get("/api/products/", { params });
-        this.products = response.data;
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
-      }
+    fetchProducts() {
+      axios
+        .get("http://127.0.0.1:8000/api/products/")
+        .then((response) => {
+          this.products = response.data;
+        })
+        .catch((error) => {
+          console.error("Failed to fetch products:", error);
+        });
     },
-    async fetchCategories() {
-      try {
-        const response = await axios.get("/api/categories/");
-        this.categories = response.data;
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
-      }
+    fetchUserProfile() {
+      axios
+        .get("http://localhost:8000/api/user/profile/")
+        .then((response) => {
+          this.userProfile = response.data.profile; // 假设返回的数据中包含用户profile信息
+          this.avatarUrl = `${this.mediaUrl}${this.userProfile.avatar}`;
+        })
+        .catch((error) => {
+          console.error("Failed to fetch user profile:", error);
+        });
     },
-    addToCart(product) {
-      // 添加商品到购物车的逻辑
-      alert(`已将 ${product.product_name} 加入购物车`);
-      // 可以在这里发送API请求添加商品到购物车
-    },
-    prevPage() {
-      if (this.currentPage > 0) {
-        this.currentPage--;
-      }
-    },
-    nextPage() {
-      if (this.currentPage < this.totalPages - 1) {
-        this.currentPage++;
-      }
+    fetchCategories() {
+      // 调用后端获取分类数据的API
+      axios
+        .get("http://127.0.0.1:8000/api/categories/") // 需要确保后端API存在这个endpoint
+        .then((response) => {
+          this.categories = response.data;
+        })
+        .catch((error) => {
+          console.error("Failed to fetch categories:", error);
+        });
     },
     handleImageError(event) {
       event.target.src = "./assets/default.png"; // 使用默认图片路径替换损坏的图片
     },
-  },
-  mounted() {
-    this.fetchCategories(); // 获取分类列表
-    this.fetchProducts(); // 获取商品列表
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
+    },
+    addToCart(product) {
+      axios
+        .post("http://127.0.0.1:8000/api/cart/add_item/", {
+          product_id: product.product_id,
+          quantity: 1, // 默认添加一件商品到购物车
+        })
+        .then(() => {
+          alert("商品已添加到购物车");
+        })
+        .catch((error) => {
+          console.error("Failed to add item to cart:", error);
+          alert("添加到购物车失败");
+        });
+    },
+    showProductDetails(product) {
+      this.selectedProduct = product;
+      this.showModal = true;
+    },
+    closeModal() {
+      this.showModal = false;
+      this.selectedProduct = null;
+    },
+    formatDate(dateString) {
+      const options = { year: "numeric", month: "long", day: "numeric" };
+      return new Date(dateString).toLocaleDateString(undefined, options);
+    },
+    goToAccount() {
+      this.$router.push("/account");
+    },
   },
 };
 </script>
 
 <style scoped>
-/* 商店内容 */
-.shop-section {
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  margin: 2rem auto;
-  max-width: 1200px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.filters {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.shop-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.product-card-container {
-  flex: 0 1 calc(33.333% - 20px); /* 每行显示3个卡片，卡片之间有间距 */
-}
-
-.product-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border: none;
-  border-radius: 10px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.card-img-top {
-  height: 200px;
-  object-fit: cover;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  transition: transform 0.3s ease-in-out;
-}
-
-.card-img-top:hover {
-  transform: scale(1.05);
-}
-
-.card-title {
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-.product-price {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #28a745;
-  margin-top: 0.5rem;
-}
-
-.btn-primary {
-  background-color: #28a745;
-  border: none;
-  color: white;
-  padding: 0.5rem 1rem;
-  text-align: center;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.btn-primary:hover {
-  background-color: #218838;
-}
-
-/* 分页控制 */
-.pagination-controls {
+/* 搜索和筛选容器样式 */
+.search-filter-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 20px;
+  margin-bottom: 1rem;
+  gap: 1rem;
 }
 
-.btn-pagination {
-  background-color: #007bff;
-  border: none;
-  color: white;
-  padding: 0.5rem 1rem;
-  margin: 0 10px;
-  cursor: pointer;
+.search-filter-container select,
+.search-filter-container input {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
   border-radius: 5px;
-  transition: background-color 0.3s ease;
 }
 
-.btn-pagination:disabled {
-  background-color: #c0c0c0;
-  cursor: not-allowed;
+/* 添加产品价格样式 */
+.price {
+  font-size: 1.2rem;
+  color: #28a745;
+  margin-bottom: 1rem;
 }
 
-.btn-pagination:hover:enabled {
-  background-color: #0056b3;
+/* 动画效果 */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.5s ease;
 }
 
-/* 页脚 */
-.footer {
-  background: rgba(52, 58, 64, 0.8);
-  color: white;
+.slide-fade-enter,
+.slide-fade-leave-to /* .slide-fade-leave-active for <2.1.8 */ {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+/* 模态框 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7); /* 深色背景遮罩 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: rgba(255, 255, 255, 0.9); /* 半透明白色背景 */
+  backdrop-filter: blur(20px); /* 毛玻璃效果 */
+  border-radius: 15px; /* 圆角 */
+  padding: 30px; /* 内边距 */
+  max-width: 90%; /* 最大宽度为90% */
+  max-height: 90%; /* 最大高度为90% */
+  width: auto; /* 宽度根据内容调整 */
+  height: auto; /* 高度根据内容调整 */
   text-align: center;
-  padding: 1rem;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3); /* 阴影效果 */
+  overflow-y: auto; /* 垂直方向滚动条 */
+  overflow-x: hidden; /* 禁止水平方向滚动条 */
+  transition: all 0.3s ease; /* 平滑过渡效果 */
 }
 
-.container {
-  max-width: 1140px;
-  margin: 0 auto;
+.modal-content.show {
+  transform: translateY(0); /* 显示时恢复位置 */
+}
+
+.modal-image {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 20px;
+  border-radius: 10px; /* 圆角图片 */
+}
+
+.modal-details {
+  text-align: left;
+  color: #333; /* 深色文字 */
+}
+
+.details-container {
+  max-height: 200px; /* 最大高度200px */
+  overflow-y: auto; /* 保持垂直滚动条 */
+  padding: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* 边框 */
+  border-radius: 10px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.5); /* 半透明背景 */
+}
+
+.recommended-label {
+  display: inline-block;
+  background: #28a745;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.modal-content button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+}
+
+.modal-content button:hover {
+  background: #218838; /* 按钮悬停效果 */
+}
+
+/* 动画效果 */
+.modal-overlay-enter-active,
+.modal-overlay-leave-active {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay-enter,
+.modal-overlay-leave-to {
+  opacity: 0;
 }
 </style>
 
@@ -482,16 +605,19 @@ export default {
 /* 容器居中，设置最大宽度 */
 .product-container {
   display: flex;
+  flex-wrap: wrap; /* 允许换行，使产品在多行展示 */
   justify-content: center; /* 子元素水平居中 */
-  align-items: center; /* 子元素垂直居中 */
-  max-width: 1600px; /* 设置最大宽度以防止过度拉伸 */
-  flex-wrap: flex; /* 当内容过多时不换行 */
+  align-items: flex-start; /* 子元素顶部对齐 */
+  max-width: 1200px; /* 根据需要调整最大宽度 */
   gap: 20px; /* 增加卡片之间的间距 */
+  margin: 0 auto; /* 居中对齐 */
 }
 
 /* 商品卡片容器 */
 .product-card-container {
-  flex: 0 1 300px; /* 控制卡片宽度并允许换行 */
+  flex: 0 1 calc(33.333% - 20px); /* 每行展示3个卡片，减去间距 */
+  box-sizing: border-box; /* 确保 padding 和 border 不影响宽度计算 */
+  margin-bottom: 20px; /* 控制每行卡片之间的垂直间距 */
 }
 
 /* 商品卡片样式 */
@@ -503,7 +629,15 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: space-between; /* 保证按钮始终在底部 */
+  min-height: 460px; /* 确保所有卡片最小高度一致 */
+}
+
+.card-body {
+  flex-grow: 1; /* 使卡片主体部分填充剩余空间 */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 使卡片内容分布均匀 */
 }
 
 .card-img-top {
@@ -523,6 +657,7 @@ export default {
   margin-bottom: 0.5rem;
 }
 
+/* 推荐标签的样式 */
 .recommended-label {
   display: inline-block;
   background: #28a745;
@@ -591,6 +726,7 @@ export default {
   color: white;
   text-align: center;
   padding: 1rem;
+  margin-top: auto; /* 确保页脚始终位于页面底部 */
 }
 
 .container {
@@ -598,12 +734,40 @@ export default {
   margin: 0 auto;
 }
 
-/* 模态框 */
-.modal-content {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+.modal-image {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 15px;
+}
+
+.modal-content button {
+  margin-top: 10px;
+  display: block;
+  width: 100%;
+}
 /* 动画效果 */
 .slide-fade-enter-active,
 .slide-fade-leave-active {
@@ -614,5 +778,17 @@ export default {
 .slide-fade-leave-to /* .slide-fade-leave-active for <2.1.8 */ {
   transform: translateX(20px);
   opacity: 0;
+}
+
+@media (max-width: 1200px) {
+  .product-card-container {
+    flex: 0 1 calc(50% - 20px); /* 在中等屏幕上每行展示2个卡片 */
+  }
+}
+
+@media (max-width: 768px) {
+  .product-card-container {
+    flex: 0 1 calc(100% - 20px); /* 在小屏幕上每行展示1个卡片 */
+  }
 }
 </style>

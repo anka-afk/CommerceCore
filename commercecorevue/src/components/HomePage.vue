@@ -47,7 +47,7 @@
           </router-link>
         </div>
         <img
-          src="user-avatar.jpg"
+          :src="avatarUrl || 'default-avatar.jpg'"
           class="user-avatar"
           @click="goToAccount"
           alt="User Avatar"
@@ -72,7 +72,10 @@
           v-for="product in paginatedProducts[currentPage]"
           :key="product.id"
         >
-          <div class="card product-card h-100 shadow-sm">
+          <div
+            class="card product-card h-100 shadow-sm"
+            @click="showProductDetails(product)"
+          >
             <img
               :src="product.image"
               class="card-img-top"
@@ -97,12 +100,48 @@
                 >
               </div>
               <span v-if="product.suggest" class="recommended-label">推荐</span>
-              <button class="btn btn-primary mt-auto">添加到购物车</button>
             </div>
           </div>
         </div>
       </transition-group>
     </section>
+    <!-- 弹出窗口 -->
+    <div v-if="showModal" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <h3>{{ selectedProduct.product_name }}</h3>
+        <img
+          :src="selectedProduct.image"
+          alt="Product Image"
+          class="modal-image"
+        />
+        <div class="modal-details">
+          <p><strong>商品描述:</strong> {{ selectedProduct.description }}</p>
+          <p><strong>商品详情:</strong></p>
+          <div class="details-container">{{ selectedProduct.details }}</div>
+          <p><strong>价格:</strong> {{ selectedProduct.price }} 元</p>
+          <p><strong>库存数量:</strong> {{ selectedProduct.stock_quantity }}</p>
+          <p><strong>单位:</strong> {{ selectedProduct.unit }}</p>
+          <p><strong>销量:</strong> {{ selectedProduct.sales }}</p>
+          <p>
+            <strong>评分:</strong> {{ selectedProduct.score }} / 5 ({{
+              selectedProduct.rating_count
+            }}
+            人评分)
+          </p>
+          <p>
+            <strong>类别:</strong> {{ selectedProduct.category.category_name }}
+          </p>
+          <p>
+            <strong>上架时间:</strong>
+            {{ formatDate(selectedProduct.listing_date) }}
+          </p>
+          <span v-if="selectedProduct.suggest" class="recommended-label"
+            >推荐</span
+          >
+        </div>
+        <button class="btn btn-secondary" @click="closeModal">关闭</button>
+      </div>
+    </div>
 
     <!-- 滑动控制箭头 -->
     <div class="slider-controls">
@@ -179,10 +218,16 @@ export default {
       products: [],
       paginatedProducts: [],
       currentPage: 0,
+      mediaUrl: "http://localhost:8000", // 将其设置为你的后端基础 URL，省略 /media/
+      userProfile: null, // 用户信息对象
+      avatarUrl: null, // 头像URL
+      showModal: false, // 控制模态框显示
+      selectedProduct: null, // 当前选中的商品
     };
   },
   mounted() {
     this.fetchProducts();
+    this.fetchUserProfile(); // 添加获取用户信息的方法
   },
   methods: {
     fetchProducts() {
@@ -197,6 +242,17 @@ export default {
         })
         .catch((error) => {
           console.error("Failed to fetch products:", error);
+        });
+    },
+    fetchUserProfile() {
+      axios
+        .get("http://localhost:8000/api/user/profile/")
+        .then((response) => {
+          this.userProfile = response.data.profile; // 假设返回的数据中包含用户profile信息
+          this.avatarUrl = `${this.mediaUrl}${this.userProfile.avatar}`;
+        })
+        .catch((error) => {
+          console.error("Failed to fetch user profile:", error);
         });
     },
     prepareProducts() {
@@ -240,6 +296,18 @@ export default {
     goToAccount() {
       this.$router.push("/account");
     },
+    showProductDetails(product) {
+      this.selectedProduct = product;
+      this.showModal = true;
+    },
+    closeModal() {
+      this.showModal = false;
+      this.selectedProduct = null;
+    },
+    formatDate(dateString) {
+      const options = { year: "numeric", month: "long", day: "numeric" };
+      return new Date(dateString).toLocaleDateString(undefined, options);
+    },
   },
 };
 </script>
@@ -247,7 +315,7 @@ export default {
 <style scoped>
 /* 设置背景图片覆盖整个网页，并固定不动 */
 .app-container {
-  min-height: 100vh; /* 确保背景覆盖整个页面，包括滚动后部分 */
+  min-height: 100vh;
   background: url("../assets/background.jpg") no-repeat center center fixed;
   background-size: cover;
   display: flex;
@@ -276,36 +344,33 @@ export default {
 }
 
 .brand-name {
-  font-size: 1.5rem; /* 增加字体大小 */
-  font-family: "Microsoft Yahei UI light", cursive; /* 示例字体，你可以替换成你喜欢的字体 */
-  color: #007bff; /* 文字颜色 */
+  font-size: 1.5rem;
+  font-family: "Microsoft Yahei UI light", cursive;
+  color: #007bff;
   font-weight: bold;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* 添加轻微阴影 */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
   transition: color 0.3s ease, transform 0.3s ease;
 }
 
 .brand-name:hover {
-  color: #0056b3; /* 悬停时改变颜色 */
-  transform: scale(1.05); /* 悬停时轻微放大 */
-}
-
-.navbar-brand {
-  font-size: 1.5rem;
-  color: #007bff;
+  color: #0056b3;
+  transform: scale(1.05);
 }
 
 .navbar-menu {
   display: flex;
   justify-content: space-between;
-  align-items: center; /* 确保菜单内元素垂直居中 */
-  flex: 1; /* 占满剩余空间 */
+  align-items: center;
+  flex: 1;
 }
+
 .nav-links {
   display: flex;
   justify-content: center;
-  flex: 1; /* 居中对齐并占据可用空间 */
-  gap: 15px; /* 控制链接之间的间距 */
+  flex: 1;
+  gap: 15px;
 }
+
 .nav-link {
   display: flex;
   align-items: center;
@@ -316,18 +381,13 @@ export default {
   transition: background 0.3s, color 0.3s;
   border-radius: 20px;
 }
-.nav-link:hover {
-  background: #e0f7e9;
-  color: #28a745;
-}
-.nav-link i {
-  margin-right: 0.4rem; /* 缩小图标和文字之间的间距 */
-  font-size: 1.1rem; /* 减小图标尺寸 */
-}
+
+.nav-link:hover,
 .nav-link.active {
   background: #e0f7e9;
   color: #28a745;
 }
+
 .nav-icon {
   width: 20px;
   height: 20px;
@@ -341,6 +401,7 @@ export default {
   color: #007bff;
   margin-right: 1rem;
   cursor: pointer;
+  transition: background 0.3s, color 0.3s;
 }
 
 .btn-contact:hover {
@@ -356,10 +417,12 @@ export default {
   border: 2px solid #28a745;
   transition: border 0.3s, transform 0.3s;
 }
+
 .user-avatar:hover {
   border-color: #1e7e34;
   transform: scale(1.1);
 }
+
 /* 中间块 */
 .center-block {
   flex: 1;
@@ -393,25 +456,25 @@ export default {
 .product-section {
   flex: 1;
   display: flex;
-  justify-content: center; /* 水平方向居中 */
-  align-items: center; /* 垂直方向居中 */
+  justify-content: center;
+  align-items: center;
   padding: 2rem;
-  background: transparent; /* 确保背景透明 */
+  background: transparent;
 }
 
 /* 容器居中，设置最大宽度 */
 .product-container {
   display: flex;
-  justify-content: center; /* 子元素水平居中 */
-  align-items: center; /* 子元素垂直居中 */
-  max-width: 1600px; /* 设置最大宽度以防止过度拉伸 */
-  flex-wrap: flex; /* 当内容过多时不换行 */
-  gap: 20px; /* 增加卡片之间的间距 */
+  justify-content: center;
+  align-items: center;
+  max-width: 1600px;
+  flex-wrap: flex;
+  gap: 20px;
 }
 
 /* 商品卡片容器 */
 .product-card-container {
-  flex: 0 1 300px; /* 控制卡片宽度并允许换行 */
+  flex: 0 1 300px;
 }
 
 /* 商品卡片样式 */
@@ -421,6 +484,14 @@ export default {
   border: none;
   border-radius: 10px;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 420px;
+}
+
+.card-body {
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -443,6 +514,7 @@ export default {
   margin-bottom: 0.5rem;
 }
 
+/* 推荐标签的样式 */
 .recommended-label {
   display: inline-block;
   background: #28a745;
@@ -459,7 +531,7 @@ export default {
 }
 
 .star {
-  color: #ffd700; /* 金色 */
+  color: #ffd700;
   font-size: 1.25rem;
 }
 
@@ -468,7 +540,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 20px; /* 增加间距 */
+  margin-top: 20px;
 }
 
 .slider-arrow {
@@ -511,6 +583,7 @@ export default {
   color: white;
   text-align: center;
   padding: 1rem;
+  margin-top: auto;
 }
 
 .container {
@@ -519,9 +592,49 @@ export default {
 }
 
 /* 模态框 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
 .modal-content {
-  background: rgba(255, 255, 255, 0.9);
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  overflow-y: auto;
+  max-height: 80vh;
   backdrop-filter: blur(10px);
+}
+
+/* 模态框内容图片 */
+.modal-image {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 15px;
+}
+
+.modal-details {
+  text-align: left;
+}
+
+.details-container {
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 15px;
 }
 
 /* 动画效果 */
@@ -531,7 +644,7 @@ export default {
 }
 
 .slide-fade-enter,
-.slide-fade-leave-to /* .slide-fade-leave-active for <2.1.8 */ {
+.slide-fade-leave-to {
   transform: translateX(20px);
   opacity: 0;
 }

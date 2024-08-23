@@ -25,11 +25,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = ['avatar', 'birthdate', 'bio']
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'category_name', 'description', 'image']
-
+        fields = '__all__'
 class UserSerializer(serializers.ModelSerializer):
     
 
@@ -37,12 +37,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone_number', 'tel', 'address', 'sex', 'profile']
+        fields = ['username', 'email', 'phone_number', 'tel', 'address', 'sex', 'profile','registration_date']
 
     def update(self, instance, validated_data):
+        # 更新用户模型字段
         profile_data = validated_data.pop('profile', {})
-        profile = instance.profile
-
+        instance.username = validated_data.get('username', instance.username)
         instance.email = validated_data.get('email', instance.email)
         instance.phone_number = validated_data.get('phone_number', instance.phone_number)
         instance.tel = validated_data.get('tel', instance.tel)
@@ -50,6 +50,8 @@ class UserSerializer(serializers.ModelSerializer):
         instance.sex = validated_data.get('sex', instance.sex)
         instance.save()
 
+        # 更新用户的profile字段
+        profile = instance.profile
         profile.avatar = profile_data.get('avatar', profile.avatar)
         profile.birthdate = profile_data.get('birthdate', profile.birthdate)
         profile.bio = profile_data.get('bio', profile.bio)

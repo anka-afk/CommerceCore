@@ -55,7 +55,7 @@ class Product(models.Model):
     product_name = models.CharField(verbose_name="商品名称", max_length=100)
     image = models.ImageField(verbose_name="商品图片", upload_to='product_images/', default='avatars/default.png')
     click = models.IntegerField(verbose_name="点击量", default=0)
-    unit = models.CharField(verbose_name="单位重量", max_length=20, default="500g")
+    unit = models.CharField(verbose_name="单位", max_length=20, default="个")
     description = models.TextField(verbose_name="商品描述", blank=True)
     details = models.TextField(verbose_name="商品详情", blank=True)
     price = models.DecimalField(verbose_name="价格", max_digits=10, decimal_places=2)
@@ -64,7 +64,8 @@ class Product(models.Model):
     listing_date = models.DateTimeField(verbose_name="上架时间", auto_now_add=True)
     suggest = models.BooleanField(verbose_name="推荐", default=False)
     score = models.IntegerField(verbose_name="评分", default=0)
-
+    sales = models.IntegerField(verbose_name="销量", default=0)
+    rating_count = models.IntegerField(verbose_name="评分人数", default=0)
     def __str__(self):
         return self.product_name
 
