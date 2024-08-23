@@ -1,13 +1,14 @@
 from django.shortcuts import render
-from .models import Product,ShoppingCart,Order,OrderDetail,Payment,CartItem
+from .models import Product,ShoppingCart,Order,OrderDetail,Payment,CartItem,User
 from rest_framework import viewsets,serializers
-from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer
+from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer,UserSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework import status
 from django.shortcuts import get_object_or_404
@@ -107,3 +108,32 @@ class ShoppingCartViewSet(viewsets.ViewSet):
             return Response({'status': 'quantity updated'}, status=status.HTTP_200_OK)
         except CartItem.DoesNotExist:
             return Response({'error': 'Item not found in cart'}, status=status.HTTP_404_NOT_FOUND)
+        
+class UserViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+    
+    def retrieve(self, request, pk=None):
+        user = self.get_object()
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+    def update(self, request, pk=None):
+        user = self.get_object()
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get', 'patch'], url_path='profile')
+    def profile(self, request):
+        user = request.user
+        if request.method == 'PATCH':
+            serializer = UserSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            serializer = UserSerializer(user)
+            return Response(serializer.data)

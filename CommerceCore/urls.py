@@ -3,12 +3,13 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import ProductViewSet, ShoppingCartViewSet, CustomAuthToken
+from .views import ProductViewSet, ShoppingCartViewSet, CustomAuthToken,UserViewSet
 from . import views
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet)
 router.register(r'cart', ShoppingCartViewSet, basename='cart')
+router.register(r'user', UserViewSet, basename='user')
 
 urlpatterns = [
     path("admin/", admin.site.urls),

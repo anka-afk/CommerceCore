@@ -3,6 +3,8 @@ import ProductList from "../components/ProductList.vue";
 import Home from "../components/HomePage.vue";
 import Login from "../components/LoginPage.vue";
 import Cart from "../components/CartPage.vue";
+import UserAccount from "@/components/UserAccount.vue";
+
 const routes = [
   {
     path: "/products",
@@ -23,6 +25,11 @@ const routes = [
     path: "/cart",
     name: "CartPage",
     component: Cart, // 添加购物车页面的路由
+  },
+  {
+    path: "/account",
+    name: "account",
+    component: UserAccount,
   },
 ];
 

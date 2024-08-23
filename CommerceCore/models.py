@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin,User
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email=None, password=None, **extra_fields):
@@ -121,3 +121,12 @@ class GoodsBrowser(models.Model):
 
     def __str__(self):
         return f"{self.user.username} browsed {self.product.product_name}"
+    
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    avatar = models.ImageField(upload_to='avatars/', default='avatars/default.jpg', verbose_name="头像")
+    birthdate = models.DateField(null=True, blank=True, verbose_name="生日")
+    bio = models.TextField(blank=True, verbose_name="个人简介")
+
+    def __str__(self):
+        return f"{self.user.username}'s profile"

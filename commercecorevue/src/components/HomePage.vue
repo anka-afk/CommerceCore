@@ -1,113 +1,67 @@
 <template>
-  <div>
+  <div class="app-container">
     <!-- 导航栏 -->
-    <nav
-      class="navbar navbar-expand-lg navbar-light bg-light shadow-sm sticky-top"
-    >
+    <nav class="navbar glass-navbar">
       <a class="navbar-brand" href="#">我的电商网站</a>
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-toggle="collapse"
-        data-target="#navbarNav"
-        aria-controls="navbarNav"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
-      >
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="/products">产品列表</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/cart">购物车</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">我的账户</a>
-          </li>
-          <li class="nav-item">
-            <button
-              class="btn btn-outline-primary ml-2"
-              @click="openContactModal"
-            >
-              联系我们
-            </button>
-          </li>
-        </ul>
+      <div class="navbar-menu">
+        <router-link class="nav-link" to="/products">产品列表</router-link>
+        <router-link class="nav-link" to="/cart">购物车</router-link>
+        <button class="btn-contact" @click="openContactModal">联系我们</button>
+        <img
+          src="user-avatar.jpg"
+          class="user-avatar"
+          @click="goToAccount"
+          alt="User Avatar"
+        />
       </div>
     </nav>
 
-    <!-- 横幅部分 -->
-    <div class="jumbotron jumbotron-fluid text-center text-white">
-      <div class="overlay"></div>
-      <div class="container position-relative">
-        <h1 class="display-4 font-weight-bold">欢迎来到我们的电商网站！</h1>
-        <p class="lead">我们提供最优质的商品和最优惠的价格。</p>
-        <a class="btn btn-primary btn-lg mr-2" href="/products" role="button"
-          >查看产品</a
-        >
-        <a
-          class="btn btn-secondary btn-lg"
-          href="#popular-products"
-          role="button"
-          >热门产品</a
-        >
+    <!-- Jumbotron 横幅 -->
+    <section class="jumbotron">
+      <div class="content">
+        <h1>欢迎来到我的电商网站</h1>
+        <p>这里有最好的产品，最优惠的价格。</p>
+        <button class="btn btn-primary btn-lg">立即购物</button>
       </div>
-    </div>
+    </section>
 
-    <!-- 热门产品部分 -->
-    <div id="popular-products" class="container mt-5">
-      <h2 class="text-center mb-4">热门产品</h2>
-      <div class="row">
+    <!-- 产品展示 -->
+    <section class="product-section">
+      <div class="product-slider" ref="slider">
         <div
-          class="col-md-4"
-          v-for="product in featuredProducts"
+          class="product-slide"
+          v-for="product in products"
           :key="product.id"
         >
-          <div class="card shadow-sm mb-4 product-card">
-            <img
-              :src="product.image"
-              class="card-img-top"
-              :alt="product.product_name"
-            />
+          <div class="card product-card">
+            <img :src="product.image" class="card-img-top" alt="产品图片" />
             <div class="card-body">
-              <h5 class="card-title">{{ product.product_name }}</h5>
-              <p class="card-text text-muted">¥{{ product.price }}</p>
-              <a
-                :href="'/products/' + product.id"
-                class="btn btn-primary btn-block"
-                >查看详情</a
-              >
-              <button
-                class="btn btn-success btn-block mt-2"
-                @click="addToCart(product.id)"
-              >
-                添加到购物车
-              </button>
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="card-text">{{ product.description }}</p>
+              <button class="btn btn-primary">添加到购物车</button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- 页脚 -->
-    <footer class="footer mt-auto py-3 bg-dark text-white">
+    <footer class="footer">
       <div class="container">
-        <span>© 2024 我的电商网站. 版权所有.</span>
+        <span>&copy; 2024 我的电商网站. 版权所有.</span>
       </div>
     </footer>
 
-    <!-- 联系我们模态窗口 -->
+    <!-- 联系我们 模态框 -->
     <div
       class="modal fade"
       id="contactModal"
       tabindex="-1"
+      role="dialog"
       aria-labelledby="contactModalLabel"
       aria-hidden="true"
     >
-      <div class="modal-dialog">
+      <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="contactModalLabel">联系我们</h5>
@@ -121,11 +75,10 @@
             </button>
           </div>
           <div class="modal-body">
-            <p>如果您有任何问题，请通过以下方式联系我们：</p>
+            <p>您可以通过以下方式联系我们：</p>
             <ul>
-              <li>电话：123-456-7890</li>
-              <li>邮箱：support@ecommerce.com</li>
-              <li>地址：某某市某某区某某路123号</li>
+              <li>电子邮件: support@example.com</li>
+              <li>电话: 123-456-7890</li>
             </ul>
           </div>
           <div class="modal-footer">
@@ -144,65 +97,175 @@
 </template>
 
 <script>
-import axios from "axios";
-
 export default {
-  name: "HomePage",
   data() {
     return {
-      featuredProducts: [], // 热门产品列表
+      products: [
+        {
+          id: 1,
+          name: "产品1",
+          description: "这是产品1的描述。",
+          image: "https://via.placeholder.com/200",
+        },
+        {
+          id: 2,
+          name: "产品2",
+          description: "这是产品2的描述。",
+          image: "https://via.placeholder.com/200",
+        },
+        {
+          id: 3,
+          name: "产品3",
+          description: "这是产品3的描述。",
+          image: "https://via.placeholder.com/200",
+        },
+        // 添加更多产品
+      ],
     };
   },
-  created() {
-    // 获取热门产品数据
-    axios
-      .get("http://127.0.0.1:8000/api/products/?suggest=true")
-      .then((response) => {
-        this.featuredProducts = response.data;
-      })
-      .catch((error) => {
-        console.error(
-          "There was an error fetching the featured products:",
-          error
-        );
-      });
+  mounted() {
+    this.startAutoSlide();
   },
   methods: {
     openContactModal() {
-      // 打开联系模态窗口
-      window.$("#contactModal").modal("show");
+      this.$refs.contactModal.show();
     },
-    addToCart(productId) {
-      console.log("Adding product to cart:", productId);
-      // 这里可以添加购物车功能的逻辑
+    goToAccount() {
+      this.$router.push("/account");
+    },
+    startAutoSlide() {
+      setInterval(() => {
+        const slider = this.$refs.slider;
+        slider.scrollLeft += slider.clientWidth;
+        if (slider.scrollLeft + slider.clientWidth >= slider.scrollWidth) {
+          slider.scrollLeft = 0;
+        }
+      }, 20000); // 每20秒自动滑动
     },
   },
 };
 </script>
 
 <style scoped>
-.navbar {
-  padding: 1rem 2rem;
-}
-
-.jumbotron {
-  background: url("https://example.com/banner.jpg") center center no-repeat;
+/* 设置背景图片覆盖整个网页，并固定不动 */
+.app-container {
+  height: 100vh;
+  background: url("../assets/background.jpg") no-repeat center center fixed;
   background-size: cover;
-  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
-.jumbotron .overlay {
-  position: absolute;
+/* 导航栏毛玻璃效果 */
+.glass-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  position: sticky;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+  color: #007bff;
+}
+
+.navbar-menu {
+  display: flex;
+  align-items: center;
+}
+
+.nav-link {
+  margin-right: 1rem;
+  color: #333;
+  text-decoration: none;
+}
+
+.btn-contact {
+  background: transparent;
+  border: 1px solid #007bff;
+  padding: 0.5rem 1rem;
+  color: #007bff;
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.btn-contact:hover {
+  background: #007bff;
+  color: white;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Jumbotron 横幅 */
+.jumbotron {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.jumbotron .content {
+  color: white;
+}
+
+.jumbotron h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.jumbotron p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+/* 产品展示 */
+.product-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.product-slider {
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+}
+
+.product-slide {
+  flex: 0 0 auto;
+  width: 300px;
+  margin-right: 20px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 10px;
 }
 
 .card-img-top {
   height: 200px;
   object-fit: cover;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
   transition: transform 0.3s ease-in-out;
 }
 
@@ -210,53 +273,30 @@ export default {
   transform: scale(1.05);
 }
 
-.product-card:hover {
-  transform: scale(1.02);
-  transition: transform 0.3s ease-in-out;
-}
-
 .card-title {
-  font-weight: 600;
+  font-weight: bold;
 }
 
-.btn-primary {
-  background-color: #007bff;
-  border-color: #007bff;
-  transition: background-color 0.3s ease-in-out;
+.product-card {
+  padding: 1rem;
 }
 
-.btn-primary:hover {
-  background-color: #0056b3;
-  border-color: #0056b3;
-}
-
-.btn-success {
-  background-color: #28a745;
-  border-color: #28a745;
-  transition: background-color 0.3s ease-in-out;
-}
-
-.btn-success:hover {
-  background-color: #218838;
-  border-color: #218838;
-}
-
+/* 页脚 */
 .footer {
-  background-color: #343a40;
+  background: rgba(52, 58, 64, 0.8);
   color: white;
   text-align: center;
+  padding: 1rem;
 }
 
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+/* 模态框 */
 .modal-content {
-  border-radius: 0.75rem;
-  overflow: hidden;
-}
-
-.modal-header {
-  border-bottom: none;
-}
-
-.modal-footer {
-  border-top: none;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
 }
 </style>
