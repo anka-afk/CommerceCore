@@ -18,6 +18,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import logout
+from rest_framework.decorators import api_view
+from rest_framework.permissions import AllowAny
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +131,7 @@ class UserViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    
     def retrieve(self, request, pk=None):
         user = request.user  # 使用 request.user 获取当前用户
         serializer = UserSerializer(user)
@@ -183,6 +187,9 @@ class UserViewSet(viewsets.ViewSet):
         return Response({'status': 'Account deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    
     def post(self, request, *args, **kwargs):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -213,3 +220,40 @@ class FavoriteItemViewSet(viewsets.ModelViewSet):
 class AnnouncementViewSet(viewsets.ModelViewSet):
     queryset = Announcement.objects.all().order_by('-created_at')
     serializer_class = AnnouncementSerializer
+    
+@api_view(['POST'])
+def logout_view(request):
+    try:
+        # 输出请求数据到日志
+        print(f"Request data: {request.data}")
+
+        # 从请求数据中获取 refresh_token
+        refresh_token = request.data.get("refresh_token")
+        if not refresh_token:
+            return Response({"error": "No refresh token provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 尝试创建 Token 并黑名单化
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+        
+        # 输出成功信息到日志
+        print("Token successfully blacklisted.")
+
+    except Exception as e:
+        # 针对已加入黑名单的令牌，返回特定的错误信息
+        if 'Token is blacklisted' in str(e):
+            print("Token is already blacklisted.")
+            return Response({"detail": "Token is already blacklisted."}, status=status.HTTP_200_OK)
+        
+        # 针对无效令牌的情况，返回特定的错误信息
+        elif 'Token is invalid or expired' in str(e):
+            print("Token is invalid or expired.")
+            return Response({"detail": "Token is invalid or expired."}, status=status.HTTP_200_OK)
+
+        # 输出其他错误信息到日志
+        print(f"Error occurred: {str(e)}")
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 处理登出操作
+    logout(request)
+    return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)

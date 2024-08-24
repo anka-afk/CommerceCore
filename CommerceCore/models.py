@@ -123,7 +123,7 @@ class GoodsBrowser(models.Model):
 
     def __str__(self):
         return f"{self.user.username} browsed {self.product.product_name}"
-    
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     avatar = models.ImageField(upload_to='avatars/', default='avatars/default.png', verbose_name="头像")
@@ -132,7 +132,7 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s profile"
-    
+
 class FavoriteList(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="用户")
     creation_date = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")

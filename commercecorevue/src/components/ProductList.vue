@@ -1,60 +1,5 @@
 <template>
-  <div class="app-container">
-    <!-- 导航栏 -->
-    <nav class="navbar glass-navbar">
-      <a class="navbar-brand" href="#">
-        <img src="../assets/logo.png" alt="隙间小铺" class="navbar-logo" />
-        <span class="brand-name">隙间小铺</span>
-      </a>
-      <div class="navbar-menu">
-        <div class="nav-links">
-          <router-link class="nav-link" to="/home" exact-active-class="active">
-            <img src="../assets/Home.png" class="nav-icon" /> 首页
-          </router-link>
-          <router-link
-            class="nav-link"
-            to="/products"
-            exact-active-class="active"
-          >
-            <img src="../assets/store.png" class="nav-icon" /> 商店
-          </router-link>
-          <router-link class="nav-link" to="/cart" exact-active-class="active">
-            <img src="../assets/cart.png" class="nav-icon" /> 购物车
-          </router-link>
-          <router-link
-            class="nav-link"
-            to="/favorites"
-            exact-active-class="active"
-          >
-            <img src="../assets/favorite.png" class="nav-icon" /> 收藏
-          </router-link>
-          <router-link class="nav-link" to="/help" exact-active-class="active">
-            <img src="../assets/help.png" class="nav-icon" /> 帮助
-          </router-link>
-          <router-link
-            class="nav-link"
-            to="/settings"
-            exact-active-class="active"
-          >
-            <img src="../assets/settings.png" class="nav-icon" /> 设置
-          </router-link>
-          <router-link
-            class="nav-link"
-            to="/notifications"
-            exact-active-class="active"
-          >
-            <img src="../assets/notifications.png" class="nav-icon" /> 公告
-          </router-link>
-        </div>
-        <img
-          :src="avatarUrl"
-          class="user-avatar"
-          @click="goToAccount"
-          alt="User Avatar"
-        />
-      </div>
-    </nav>
-
+  <BaseTemplate>
     <!-- 搜索和筛选 -->
     <div class="search-filter-container">
       <select v-model="selectedCategory" @change="fetchProducts">
@@ -186,11 +131,12 @@
         <span>&copy; 2024 anka. 版权所有.</span>
       </div>
     </footer>
-  </div>
+  </BaseTemplate>
 </template>
 
 <script>
 import axios from "axios";
+import BaseTemplate from "./BaseTemplate.vue";
 
 export default {
   data() {
@@ -202,10 +148,9 @@ export default {
       currentPage: 1,
       itemsPerPage: 9,
       mediaUrl: "http://localhost:8000",
-      userProfile: null,
-      avatarUrl: null,
       showModal: false, // 控制模态框显示
       selectedProduct: null, // 当前选中的商品
+      showDropdown: false,
     };
   },
   computed: {
@@ -235,7 +180,6 @@ export default {
   mounted() {
     this.fetchCategories();
     this.fetchProducts();
-    this.fetchUserProfile(); // 添加获取用户信息的方法
   },
   methods: {
     fetchProducts() {
@@ -248,17 +192,7 @@ export default {
           console.error("Failed to fetch products:", error);
         });
     },
-    fetchUserProfile() {
-      axios
-        .get("http://localhost:8000/api/user/profile/")
-        .then((response) => {
-          this.userProfile = response.data.profile; // 假设返回的数据中包含用户profile信息
-          this.avatarUrl = `${this.mediaUrl}${this.userProfile.avatar}`;
-        })
-        .catch((error) => {
-          console.error("Failed to fetch user profile:", error);
-        });
-    },
+
     fetchCategories() {
       // 调用后端获取分类数据的API
       axios
@@ -309,10 +243,8 @@ export default {
       const options = { year: "numeric", month: "long", day: "numeric" };
       return new Date(dateString).toLocaleDateString(undefined, options);
     },
-    goToAccount() {
-      this.$router.push("/account");
-    },
   },
+  components: { BaseTemplate },
 };
 </script>
 
@@ -338,18 +270,6 @@ export default {
   font-size: 1.2rem;
   color: #28a745;
   margin-bottom: 1rem;
-}
-
-/* 动画效果 */
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.5s ease;
-}
-
-.slide-fade-enter,
-.slide-fade-leave-to /* .slide-fade-leave-active for <2.1.8 */ {
-  transform: translateX(20px);
-  opacity: 0;
 }
 
 /* 模态框 */
@@ -434,174 +354,6 @@ export default {
   background: #218838; /* 按钮悬停效果 */
 }
 
-/* 动画效果 */
-.modal-overlay-enter-active,
-.modal-overlay-leave-active {
-  opacity: 1;
-  transition: opacity 0.3s ease;
-}
-
-.modal-overlay-enter,
-.modal-overlay-leave-to {
-  opacity: 0;
-}
-</style>
-
-<style scoped>
-/* 设置背景图片覆盖整个网页，并固定不动 */
-.app-container {
-  min-height: 100vh; /* 确保背景覆盖整个页面，包括滚动后部分 */
-  background: url("../assets/background.jpg") no-repeat center center fixed;
-  background-size: cover;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 导航栏毛玻璃效果 */
-.glass-navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  height: 60px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.navbar-logo {
-  height: 40px;
-  margin-right: 0.5rem;
-}
-
-.brand-name {
-  font-size: 1.5rem; /* 增加字体大小 */
-  font-family: "Microsoft Yahei UI light", cursive; /* 示例字体，你可以替换成你喜欢的字体 */
-  color: #007bff; /* 文字颜色 */
-  font-weight: bold;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* 添加轻微阴影 */
-  transition: color 0.3s ease, transform 0.3s ease;
-}
-
-.brand-name:hover {
-  color: #0056b3; /* 悬停时改变颜色 */
-  transform: scale(1.05); /* 悬停时轻微放大 */
-}
-
-.navbar-brand {
-  font-size: 1.5rem;
-  color: #007bff;
-}
-
-.navbar-menu {
-  display: flex;
-  justify-content: space-between;
-  align-items: center; /* 确保菜单内元素垂直居中 */
-  flex: 1; /* 占满剩余空间 */
-}
-.nav-links {
-  display: flex;
-  justify-content: center;
-  flex: 1; /* 居中对齐并占据可用空间 */
-  gap: 15px; /* 控制链接之间的间距 */
-}
-.nav-link {
-  display: flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
-  color: #333;
-  font-size: 0.9rem;
-  text-decoration: none;
-  transition: background 0.3s, color 0.3s;
-  border-radius: 20px;
-}
-.nav-link:hover {
-  background: #e0f7e9;
-  color: #28a745;
-}
-.nav-link i {
-  margin-right: 0.4rem; /* 缩小图标和文字之间的间距 */
-  font-size: 1.1rem; /* 减小图标尺寸 */
-}
-.nav-link.active {
-  background: #e0f7e9;
-  color: #28a745;
-}
-.nav-icon {
-  width: 20px;
-  height: 20px;
-  margin-right: 0.4rem;
-}
-
-.btn-contact {
-  background: transparent;
-  border: 1px solid #007bff;
-  padding: 0.5rem 1rem;
-  color: #007bff;
-  margin-right: 1rem;
-  cursor: pointer;
-}
-
-.btn-contact:hover {
-  background: #007bff;
-  color: white;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid #28a745;
-  transition: border 0.3s, transform 0.3s;
-}
-.user-avatar:hover {
-  border-color: #1e7e34;
-  transform: scale(1.1);
-}
-/* 中间块 */
-.center-block {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  margin-top: 2rem;
-}
-
-.center-content {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  padding: 2rem;
-  border-radius: 10px;
-  text-align: center;
-  color: #333;
-}
-
-.center-content h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-}
-
-.center-content p {
-  font-size: 1.25rem;
-  margin-bottom: 2rem;
-}
-
-/* 产品展示 */
-.product-section {
-  flex: 1;
-  display: flex;
-  justify-content: center; /* 水平方向居中 */
-  align-items: center; /* 垂直方向居中 */
-  padding: 2rem;
-  background: transparent; /* 确保背景透明 */
-}
-
 /* 容器居中，设置最大宽度 */
 .product-container {
   display: flex;
@@ -620,6 +372,28 @@ export default {
   margin-bottom: 20px; /* 控制每行卡片之间的垂直间距 */
 }
 
+@media (max-width: 1200px) {
+  .product-card-container {
+    flex: 0 1 calc(50% - 20px); /* 在中等屏幕上每行展示2个卡片 */
+  }
+}
+
+@media (max-width: 768px) {
+  .product-card-container {
+    flex: 0 1 calc(100% - 20px); /* 在小屏幕上每行展示1个卡片 */
+  }
+}
+
+/* 产品展示 */
+.product-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background: transparent;
+}
+
 /* 商品卡片样式 */
 .product-card {
   background: rgba(255, 255, 255, 0.7);
@@ -629,15 +403,15 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* 保证按钮始终在底部 */
-  min-height: 460px; /* 确保所有卡片最小高度一致 */
+  justify-content: space-between;
+  min-height: 420px;
 }
 
 .card-body {
-  flex-grow: 1; /* 使卡片主体部分填充剩余空间 */
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* 使卡片内容分布均匀 */
+  justify-content: space-between;
 }
 
 .card-img-top {
@@ -657,24 +431,13 @@ export default {
   margin-bottom: 0.5rem;
 }
 
-/* 推荐标签的样式 */
-.recommended-label {
-  display: inline-block;
-  background: #28a745;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  border-radius: 0.25rem;
-  margin-top: 0.5rem;
-}
-
 /* 星星评分样式 */
 .product-score {
   margin-bottom: 1rem;
 }
 
 .star {
-  color: #ffd700; /* 金色 */
+  color: #ffd700;
   font-size: 1.25rem;
 }
 
@@ -683,7 +446,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 20px; /* 增加间距 */
+  margin-top: 20px;
 }
 
 .slider-arrow {
@@ -718,77 +481,5 @@ export default {
 
 .dot.active {
   background-color: #007bff;
-}
-
-/* 页脚 */
-.footer {
-  background: rgba(52, 58, 64, 0.8);
-  color: white;
-  text-align: center;
-  padding: 1rem;
-  margin-top: auto; /* 确保页脚始终位于页面底部 */
-}
-
-.container {
-  max-width: 1140px;
-  margin: 0 auto;
-}
-
-/* 模态框样式 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 500px;
-  width: 100%;
-  text-align: center;
-}
-
-.modal-image {
-  max-width: 100%;
-  height: auto;
-  margin-bottom: 15px;
-}
-
-.modal-content button {
-  margin-top: 10px;
-  display: block;
-  width: 100%;
-}
-/* 动画效果 */
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.5s ease;
-}
-
-.slide-fade-enter,
-.slide-fade-leave-to /* .slide-fade-leave-active for <2.1.8 */ {
-  transform: translateX(20px);
-  opacity: 0;
-}
-
-@media (max-width: 1200px) {
-  .product-card-container {
-    flex: 0 1 calc(50% - 20px); /* 在中等屏幕上每行展示2个卡片 */
-  }
-}
-
-@media (max-width: 768px) {
-  .product-card-container {
-    flex: 0 1 calc(100% - 20px); /* 在小屏幕上每行展示1个卡片 */
-  }
 }
 </style>

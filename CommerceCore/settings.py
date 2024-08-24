@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'django_extensions',
     'django_filters',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+
 
 ]
 
@@ -164,6 +166,14 @@ AUTH_USER_MODEL = 'CommerceCore.User'
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
+    'ROTATE_REFRESH_TOKENS': False,  # 每次使用 refresh token 获取新的 access token 时是否更新 refresh token
+    'BLACKLIST_AFTER_ROTATION': False,  # 在刷新时是否将旧的 refresh token 加入黑名单
+    'AUTH_TOKEN_CLASSES': (
+        'rest_framework_simplejwt.tokens.AccessToken',
+    ),
+    'TOKEN_BLACKLIST': True,
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # 将 access token 的有效期设置为 30 分钟
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # 将 refresh token 的有效期设置为 7 天
+    'UPDATE_LAST_LOGIN': False,  # 当用户使用 refresh token 刷新时，是否更新用户的 last_login 字段
+
 }

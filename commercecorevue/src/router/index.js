@@ -9,6 +9,8 @@ import FavoriteList from "../components/FavoriteList.vue";
 import HelpPage from "../components/HelpPage.vue";
 import AnnouncementPage from "../components/AnnouncementPage.vue";
 import SettingsPage from "../components/SettingsPage.vue";
+import PaymentPage from "../components/PaymentPage.vue";
+import ForgetPasswordPage from "../components/ForgetPasswordPage.vue";
 
 const routes = [
   {
@@ -66,6 +68,16 @@ const routes = [
     name: "SettingsPage",
     component: SettingsPage,
   },
+  {
+    path: "/payment",
+    name: "PaymentPage",
+    component: PaymentPage,
+  },
+  {
+    path: "/forget-password",
+    name: "ForgetPasswordPage",
+    component: ForgetPasswordPage,
+  },
 ];
 
 const router = createRouter({
@@ -76,7 +88,14 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("access_token");
 
-  if (!token && to.name !== "LoginPage") {
+  // 列出所有不需要认证就能访问的路由名称
+  const publicPages = ["LoginPage", "RegisterPage"];
+
+  // 检查当前路由是否属于公共页面
+  const isPublicPage = publicPages.includes(to.name);
+
+  // 如果没有 token 且目标页面不是公共页面，则跳转到登录页面
+  if (!token && !isPublicPage) {
     next({ name: "LoginPage" });
   } else {
     next();

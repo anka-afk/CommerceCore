@@ -1,60 +1,5 @@
 <template>
-  <div class="app-container">
-    <!-- 导航栏 -->
-    <nav class="navbar glass-navbar">
-      <a class="navbar-brand" href="#">
-        <img src="../assets/logo.png" alt="隙间小铺" class="navbar-logo" />
-        <span class="brand-name">隙间小铺</span>
-      </a>
-      <div class="navbar-menu">
-        <div class="nav-links">
-          <router-link class="nav-link" to="/home" exact-active-class="active">
-            <img src="../assets/Home.png" class="nav-icon" /> 首页
-          </router-link>
-          <router-link
-            class="nav-link"
-            to="/products"
-            exact-active-class="active"
-          >
-            <img src="../assets/store.png" class="nav-icon" /> 商店
-          </router-link>
-          <router-link class="nav-link" to="/cart" exact-active-class="active">
-            <img src="../assets/cart.png" class="nav-icon" /> 购物车
-          </router-link>
-          <router-link
-            class="nav-link"
-            to="/favorites"
-            exact-active-class="active"
-          >
-            <img src="../assets/favorite.png" class="nav-icon" /> 收藏
-          </router-link>
-          <router-link class="nav-link" to="/help" exact-active-class="active">
-            <img src="../assets/help.png" class="nav-icon" /> 帮助
-          </router-link>
-          <router-link
-            class="nav-link"
-            to="/settings"
-            exact-active-class="active"
-          >
-            <img src="../assets/settings.png" class="nav-icon" /> 设置
-          </router-link>
-          <router-link
-            class="nav-link"
-            to="/notifications"
-            exact-active-class="active"
-          >
-            <img src="../assets/notifications.png" class="nav-icon" /> 公告
-          </router-link>
-        </div>
-        <img
-          :src="avatarUrl"
-          class="user-avatar"
-          @click="goToAccount"
-          alt="User Avatar"
-        />
-      </div>
-    </nav>
-
+  <BaseTemplate>
     <!-- 中间块 -->
     <section class="center-block">
       <div class="center-content">
@@ -157,60 +102,13 @@
       </div>
       <button class="slider-arrow" @click="nextPage">&gt;</button>
     </div>
-    <!-- 页脚 -->
-    <footer class="footer">
-      <div class="container">
-        <span>&copy; 2024 anka. 版权所有.</span>
-      </div>
-    </footer>
-
-    <!-- 联系我们 模态框 -->
-    <div
-      class="modal fade"
-      id="contactModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="contactModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="contactModalLabel">联系我们</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p>您可以通过以下方式联系我们：</p>
-            <ul>
-              <li>电子邮件: support@example.com</li>
-              <li>电话: 123-456-7890</li>
-            </ul>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              关闭
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  </BaseTemplate>
 </template>
 
 <script>
 import axios from "axios";
 import { nextTick } from "vue";
+import BaseTemplate from "./BaseTemplate.vue";
 
 export default {
   data() {
@@ -219,15 +117,13 @@ export default {
       paginatedProducts: [],
       currentPage: 0,
       mediaUrl: "http://localhost:8000", // 将其设置为你的后端基础 URL，省略 /media/
-      userProfile: null, // 用户信息对象
-      avatarUrl: null, // 头像URL
       showModal: false, // 控制模态框显示
       selectedProduct: null, // 当前选中的商品
+      showDropdown: false,
     };
   },
   mounted() {
     this.fetchProducts();
-    this.fetchUserProfile(); // 添加获取用户信息的方法
   },
   methods: {
     fetchProducts() {
@@ -244,17 +140,7 @@ export default {
           console.error("Failed to fetch products:", error);
         });
     },
-    fetchUserProfile() {
-      axios
-        .get("http://localhost:8000/api/user/profile/")
-        .then((response) => {
-          this.userProfile = response.data.profile; // 假设返回的数据中包含用户profile信息
-          this.avatarUrl = `${this.mediaUrl}${this.userProfile.avatar}`;
-        })
-        .catch((error) => {
-          console.error("Failed to fetch user profile:", error);
-        });
-    },
+
     prepareProducts() {
       const recommendedProducts = this.products.filter((p) => p.recommended);
       const nonRecommendedProducts = this.products.filter(
@@ -264,7 +150,6 @@ export default {
         ...recommendedProducts,
         ...nonRecommendedProducts.sort(() => 0.5 - Math.random()),
       ];
-
       this.paginatedProducts = [];
       while (shuffledProducts.length) {
         this.paginatedProducts.push(shuffledProducts.splice(0, 3));
@@ -293,9 +178,6 @@ export default {
     openContactModal() {
       this.$refs.contactModal.show();
     },
-    goToAccount() {
-      this.$router.push("/account");
-    },
     showProductDetails(product) {
       this.selectedProduct = product;
       this.showModal = true;
@@ -309,120 +191,11 @@ export default {
       return new Date(dateString).toLocaleDateString(undefined, options);
     },
   },
+  components: { BaseTemplate },
 };
 </script>
 
 <style scoped>
-/* 设置背景图片覆盖整个网页，并固定不动 */
-.app-container {
-  min-height: 100vh;
-  background: url("../assets/background.jpg") no-repeat center center fixed;
-  background-size: cover;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 导航栏毛玻璃效果 */
-.glass-navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  height: 60px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.navbar-logo {
-  height: 40px;
-  margin-right: 0.5rem;
-}
-
-.brand-name {
-  font-size: 1.5rem;
-  font-family: "Microsoft Yahei UI light", cursive;
-  color: #007bff;
-  font-weight: bold;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-  transition: color 0.3s ease, transform 0.3s ease;
-}
-
-.brand-name:hover {
-  color: #0056b3;
-  transform: scale(1.05);
-}
-
-.navbar-menu {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex: 1;
-}
-
-.nav-links {
-  display: flex;
-  justify-content: center;
-  flex: 1;
-  gap: 15px;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
-  color: #333;
-  font-size: 0.9rem;
-  text-decoration: none;
-  transition: background 0.3s, color 0.3s;
-  border-radius: 20px;
-}
-
-.nav-link:hover,
-.nav-link.active {
-  background: #e0f7e9;
-  color: #28a745;
-}
-
-.nav-icon {
-  width: 20px;
-  height: 20px;
-  margin-right: 0.4rem;
-}
-
-.btn-contact {
-  background: transparent;
-  border: 1px solid #007bff;
-  padding: 0.5rem 1rem;
-  color: #007bff;
-  margin-right: 1rem;
-  cursor: pointer;
-  transition: background 0.3s, color 0.3s;
-}
-
-.btn-contact:hover {
-  background: #007bff;
-  color: white;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid #28a745;
-  transition: border 0.3s, transform 0.3s;
-}
-
-.user-avatar:hover {
-  border-color: #1e7e34;
-  transform: scale(1.1);
-}
-
 /* 中间块 */
 .center-block {
   flex: 1;
@@ -577,20 +350,6 @@ export default {
   background-color: #007bff;
 }
 
-/* 页脚 */
-.footer {
-  background: rgba(52, 58, 64, 0.8);
-  color: white;
-  text-align: center;
-  padding: 1rem;
-  margin-top: auto;
-}
-
-.container {
-  max-width: 1140px;
-  margin: 0 auto;
-}
-
 /* 模态框 */
 .modal-overlay {
   position: fixed;
@@ -635,17 +394,5 @@ export default {
   border: 1px solid #ddd;
   border-radius: 5px;
   margin-bottom: 15px;
-}
-
-/* 动画效果 */
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.5s ease;
-}
-
-.slide-fade-enter,
-.slide-fade-leave-to {
-  transform: translateX(20px);
-  opacity: 0;
 }
 </style>

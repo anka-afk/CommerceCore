@@ -8,6 +8,6 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 /* 你可以在这里添加全局样式 */
 </style>
