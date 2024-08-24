@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from .models import Product,ShoppingCart,Order,OrderDetail,Payment,Category,CartItem,User,UserProfile
+from .models import Product,ShoppingCart,Order,OrderDetail,Payment,Category,CartItem,User,UserProfile,FavoriteList, FavoriteItem,Announcement
 from rest_framework import viewsets,serializers
-from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer,UserSerializer,CategorySerializer,RegisterSerializer
+from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer,UserSerializer,CategorySerializer,RegisterSerializer,FavoriteListSerializer, FavoriteItemSerializer,AnnouncementSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -189,3 +189,27 @@ class RegisterView(APIView):
             serializer.save()
             return Response({"message": "注册成功"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class FavoriteListViewSet(viewsets.ModelViewSet):
+    queryset = FavoriteList.objects.all()
+    serializer_class = FavoriteListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return FavoriteList.objects.filter(user=self.request.user)
+
+class FavoriteItemViewSet(viewsets.ModelViewSet):
+    serializer_class = FavoriteItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        favorite_list = FavoriteList.objects.get(user=self.request.user)
+        return FavoriteItem.objects.filter(favorite_list=favorite_list)
+
+    def perform_create(self, serializer):
+        favorite_list, created = FavoriteList.objects.get_or_create(user=self.request.user)
+        serializer.save(favorite_list=favorite_list)
+        
+class AnnouncementViewSet(viewsets.ModelViewSet):
+    queryset = Announcement.objects.all().order_by('-created_at')
+    serializer_class = AnnouncementSerializer

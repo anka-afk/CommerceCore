@@ -47,7 +47,7 @@
           </router-link>
         </div>
         <img
-          :src="avatarUrl || 'default-avatar.jpg'"
+          :src="avatarUrl"
           class="user-avatar"
           @click="goToAccount"
           alt="User Avatar"

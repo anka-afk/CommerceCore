@@ -55,195 +55,61 @@
       </div>
     </nav>
 
-    <!-- 中间块 -->
-    <section class="center-block">
-      <div class="center-content">
-        <h1>欢迎来到隙间小铺</h1>
-        <p>支付代价...</p>
-        <button class="btn btn-primary btn-lg">立即购物</button>
+    <!-- 帮助内容 -->
+    <section class="help-section">
+      <h2>帮助中心</h2>
+      <div class="help-content">
+        <h3>常见问题</h3>
+        <ul class="faq-list">
+          <li>
+            <strong>问:</strong> 如何重置密码？<br /><strong>答:</strong>
+            点击"忘记密码"链接，并按照指示操作。
+          </li>
+          <li>
+            <strong>问:</strong> 如何联系客户支持？<br /><strong>答:</strong>
+            您可以通过电子邮件或电话与我们联系。详情请参见下文。
+          </li>
+          <li>
+            <strong>问:</strong> 订单发货需要多长时间？<br /><strong
+              >答:</strong
+            >
+            通常情况下，订单将在1-3个工作日内发货。
+          </li>
+        </ul>
+
+        <h3>联系我们</h3>
+        <p>您可以通过以下方式联系我们：</p>
+        <ul>
+          <li>电子邮件: 1350989414@qq.com</li>
+          <li>电话: 暂无</li>
+        </ul>
       </div>
     </section>
 
-    <!-- 产品展示 -->
-    <section class="product-section">
-      <transition-group name="slide-fade" tag="div" class="product-container">
-        <div
-          class="product-card-container"
-          v-for="product in paginatedProducts[currentPage]"
-          :key="product.id"
-        >
-          <div
-            class="card product-card h-100 shadow-sm"
-            @click="showProductDetails(product)"
-          >
-            <img
-              :src="product.image"
-              class="card-img-top"
-              :alt="product.name"
-              @error="handleImageError($event)"
-            />
-            <div class="card-body d-flex flex-column">
-              <h5 class="card-title">{{ product.product_name }}</h5>
-              <p class="card-text">{{ product.description }}</p>
-              <div class="product-score mb-2">
-                <span
-                  v-for="n in Math.floor(product.score)"
-                  :key="n"
-                  class="star filled"
-                  >★</span
-                >
-                <span
-                  v-for="n in 5 - Math.floor(product.score)"
-                  :key="n"
-                  class="star"
-                  >☆</span
-                >
-              </div>
-              <span v-if="product.suggest" class="recommended-label">推荐</span>
-            </div>
-          </div>
-        </div>
-      </transition-group>
-    </section>
-    <!-- 弹出窗口 -->
-    <div v-if="showModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <h3>{{ selectedProduct.product_name }}</h3>
-        <img
-          :src="selectedProduct.image"
-          alt="Product Image"
-          class="modal-image"
-        />
-        <div class="modal-details">
-          <p><strong>商品描述:</strong> {{ selectedProduct.description }}</p>
-          <p><strong>商品详情:</strong></p>
-          <div class="details-container">{{ selectedProduct.details }}</div>
-          <p><strong>价格:</strong> {{ selectedProduct.price }} 元</p>
-          <p><strong>库存数量:</strong> {{ selectedProduct.stock_quantity }}</p>
-          <p><strong>单位:</strong> {{ selectedProduct.unit }}</p>
-          <p><strong>销量:</strong> {{ selectedProduct.sales }}</p>
-          <p>
-            <strong>评分:</strong> {{ selectedProduct.score }} / 5 ({{
-              selectedProduct.rating_count
-            }}
-            人评分)
-          </p>
-          <p>
-            <strong>类别:</strong> {{ selectedProduct.category.category_name }}
-          </p>
-          <p>
-            <strong>上架时间:</strong>
-            {{ formatDate(selectedProduct.listing_date) }}
-          </p>
-          <span v-if="selectedProduct.suggest" class="recommended-label"
-            >推荐</span
-          >
-        </div>
-        <button class="btn btn-secondary" @click="closeModal">关闭</button>
-      </div>
-    </div>
-
-    <!-- 滑动控制箭头 -->
-    <div class="slider-controls">
-      <button class="slider-arrow" @click="prevPage">&lt;</button>
-      <div class="pagination">
-        <span
-          v-for="(page, index) in paginatedProducts.length"
-          :key="index"
-          class="dot"
-          :class="{ active: index === currentPage }"
-          @click="goToPage(index)"
-        ></span>
-      </div>
-      <button class="slider-arrow" @click="nextPage">&gt;</button>
-    </div>
     <!-- 页脚 -->
     <footer class="footer">
       <div class="container">
         <span>&copy; 2024 anka. 版权所有.</span>
       </div>
     </footer>
-
-    <!-- 联系我们 模态框 -->
-    <div
-      class="modal fade"
-      id="contactModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="contactModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="contactModalLabel">联系我们</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p>您可以通过以下方式联系我们：</p>
-            <ul>
-              <li>电子邮件: support@example.com</li>
-              <li>电话: 123-456-7890</li>
-            </ul>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              关闭
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
-import { nextTick } from "vue";
 
 export default {
   data() {
     return {
-      products: [],
-      paginatedProducts: [],
-      currentPage: 0,
-      mediaUrl: "http://localhost:8000", // 将其设置为你的后端基础 URL，省略 /media/
-      userProfile: null, // 用户信息对象
-      avatarUrl: null, // 头像URL
-      showModal: false, // 控制模态框显示
-      selectedProduct: null, // 当前选中的商品
+      mediaUrl: "http://localhost:8000",
+      userProfile: null,
+      avatarUrl: null,
     };
   },
   mounted() {
-    this.fetchProducts();
     this.fetchUserProfile(); // 添加获取用户信息的方法
   },
   methods: {
-    fetchProducts() {
-      axios
-        .get("http://127.0.0.1:8000/api/products/")
-        .then((response) => {
-          this.products = response.data;
-          this.prepareProducts();
-          nextTick(() => {
-            this.startAutoSlide();
-          });
-        })
-        .catch((error) => {
-          console.error("Failed to fetch products:", error);
-        });
-    },
     fetchUserProfile() {
       axios
         .get("http://localhost:8000/api/user/profile/")
@@ -255,63 +121,103 @@ export default {
           console.error("Failed to fetch user profile:", error);
         });
     },
-    prepareProducts() {
-      const recommendedProducts = this.products.filter((p) => p.recommended);
-      const nonRecommendedProducts = this.products.filter(
-        (p) => !p.recommended
-      );
-      const shuffledProducts = [
-        ...recommendedProducts,
-        ...nonRecommendedProducts.sort(() => 0.5 - Math.random()),
-      ];
-
-      this.paginatedProducts = [];
-      while (shuffledProducts.length) {
-        this.paginatedProducts.push(shuffledProducts.splice(0, 3));
-      }
-    },
-    startAutoSlide() {
-      setInterval(() => {
-        this.currentPage =
-          (this.currentPage + 1) % this.paginatedProducts.length;
-      }, 20000); // 每20秒自动滑动一页
-    },
-    handleImageError(event) {
-      event.target.src = "./assets/default.png"; // 使用默认图片路径替换损坏的图片
-    },
-    prevPage() {
-      this.currentPage =
-        (this.currentPage - 1 + this.paginatedProducts.length) %
-        this.paginatedProducts.length;
-    },
-    nextPage() {
-      this.currentPage = (this.currentPage + 1) % this.paginatedProducts.length;
-    },
-    goToPage(index) {
-      this.currentPage = index;
-    },
-    openContactModal() {
-      this.$refs.contactModal.show();
-    },
     goToAccount() {
       this.$router.push("/account");
-    },
-    showProductDetails(product) {
-      this.selectedProduct = product;
-      this.showModal = true;
-    },
-    closeModal() {
-      this.showModal = false;
-      this.selectedProduct = null;
-    },
-    formatDate(dateString) {
-      const options = { year: "numeric", month: "long", day: "numeric" };
-      return new Date(dateString).toLocaleDateString(undefined, options);
     },
   },
 };
 </script>
 
+<style scoped>
+/* 样式与其他页面一致 */
+.app-container {
+  min-height: 100vh;
+  background: url("../assets/background.jpg") no-repeat center center fixed;
+  background-size: cover;
+  display: flex;
+  flex-direction: column;
+}
+
+.glass-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 60px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.brand-name {
+  font-size: 1.5rem;
+  font-family: "Microsoft Yahei UI light", cursive;
+  color: #007bff;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.brand-name:hover {
+  color: #0056b3;
+  transform: scale(1.05);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #28a745;
+  transition: border 0.3s, transform 0.3s;
+}
+
+.user-avatar:hover {
+  border-color: #1e7e34;
+  transform: scale(1.1);
+}
+
+/* 帮助内容 */
+.help-section {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  max-width: 800px;
+  margin: 20px auto;
+}
+
+.help-content h3 {
+  margin-top: 20px;
+  font-size: 1.5rem;
+}
+
+.faq-list {
+  list-style: none;
+  padding: 0;
+}
+
+.faq-list li {
+  margin-bottom: 15px;
+}
+
+/* 页脚 */
+.footer {
+  background: rgba(52, 58, 64, 0.8);
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  margin-top: auto;
+}
+
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+</style>
 <style scoped>
 /* 设置背景图片覆盖整个网页，并固定不动 */
 .app-container {

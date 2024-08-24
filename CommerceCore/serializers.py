@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import Product, ShoppingCart, CartItem,User,UserProfile,Category
+from .models import Product, ShoppingCart, CartItem,User,UserProfile,Category,FavoriteItem, FavoriteList,Announcement
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -82,3 +82,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         UserProfile.objects.create(user=user)
         return user
+
+class FavoriteItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FavoriteItem
+        fields = ['product', 'created_at']
+
+class FavoriteListSerializer(serializers.ModelSerializer):
+    items = FavoriteItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = FavoriteList
+        fields = ['user', 'creation_date', 'items']
+        
+class AnnouncementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Announcement
+        fields = '__all__'

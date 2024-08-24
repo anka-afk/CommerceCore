@@ -5,6 +5,11 @@ import Login from "../components/LoginPage.vue";
 import Cart from "../components/CartPage.vue";
 import UserAccount from "@/components/UserAccount.vue";
 import Register from "@/components/RegisterPage.vue";
+import FavoriteList from "../components/FavoriteList.vue";
+import HelpPage from "../components/HelpPage.vue";
+import AnnouncementPage from "../components/AnnouncementPage.vue";
+import SettingsPage from "../components/SettingsPage.vue";
+
 const routes = [
   {
     path: "/products",
@@ -40,6 +45,26 @@ const routes = [
     path: "/register",
     name: "RegisterPage",
     component: Register,
+  },
+  {
+    path: "/favorites",
+    name: "Favorites",
+    component: FavoriteList,
+  },
+  {
+    path: "/help",
+    name: "HelpPage",
+    component: HelpPage,
+  },
+  {
+    path: "/notifications",
+    name: "AnnouncementPage",
+    component: AnnouncementPage,
+  },
+  {
+    path: "/settings",
+    name: "SettingsPage",
+    component: SettingsPage,
   },
 ];
 

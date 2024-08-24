@@ -132,3 +132,27 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s profile"
+    
+class FavoriteList(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="用户")
+    creation_date = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+
+    def __str__(self):
+        return f"FavoriteList for {self.user.username}"
+
+class FavoriteItem(models.Model):
+    favorite_list = models.ForeignKey(FavoriteList, on_delete=models.CASCADE, verbose_name="收藏列表")
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, verbose_name="商品")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="收藏时间")
+
+    def __str__(self):
+        return f"FavoriteItem {self.product.product_name} in FavoriteList {self.favorite_list.id}"
+
+class Announcement(models.Model):
+    title = models.CharField(max_length=255, verbose_name="标题")
+    content = models.TextField(verbose_name="内容")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+
+    def __str__(self):
+        return self.title

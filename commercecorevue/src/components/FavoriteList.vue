@@ -1,6 +1,5 @@
 <template>
   <div class="app-container">
-    <!-- 导航栏 -->
     <nav class="navbar glass-navbar">
       <a class="navbar-brand" href="#">
         <img src="../assets/logo.png" alt="隙间小铺" class="navbar-logo" />
@@ -55,195 +54,43 @@
       </div>
     </nav>
 
-    <!-- 中间块 -->
-    <section class="center-block">
-      <div class="center-content">
-        <h1>欢迎来到隙间小铺</h1>
-        <p>支付代价...</p>
-        <button class="btn btn-primary btn-lg">立即购物</button>
+    <section class="favorite-section">
+      <h2>我的收藏夹</h2>
+      <div v-if="favorites && favorites.length > 0" class="favorite-container">
+        <div class="favorite-item" v-for="item in favorites" :key="item.id">
+          <img :src="item.product.image" alt="Product Image" />
+          <h3>{{ item.product.product_name }}</h3>
+          <p>{{ item.product.description }}</p>
+          <p>收藏时间: {{ formatDate(item.created_at) }}</p>
+          <button class="btn btn-danger" @click="removeFromFavorites(item.id)">
+            移除
+          </button>
+        </div>
+      </div>
+      <div v-else>
+        <p>您的收藏夹为空。</p>
       </div>
     </section>
-
-    <!-- 产品展示 -->
-    <section class="product-section">
-      <transition-group name="slide-fade" tag="div" class="product-container">
-        <div
-          class="product-card-container"
-          v-for="product in paginatedProducts[currentPage]"
-          :key="product.id"
-        >
-          <div
-            class="card product-card h-100 shadow-sm"
-            @click="showProductDetails(product)"
-          >
-            <img
-              :src="product.image"
-              class="card-img-top"
-              :alt="product.name"
-              @error="handleImageError($event)"
-            />
-            <div class="card-body d-flex flex-column">
-              <h5 class="card-title">{{ product.product_name }}</h5>
-              <p class="card-text">{{ product.description }}</p>
-              <div class="product-score mb-2">
-                <span
-                  v-for="n in Math.floor(product.score)"
-                  :key="n"
-                  class="star filled"
-                  >★</span
-                >
-                <span
-                  v-for="n in 5 - Math.floor(product.score)"
-                  :key="n"
-                  class="star"
-                  >☆</span
-                >
-              </div>
-              <span v-if="product.suggest" class="recommended-label">推荐</span>
-            </div>
-          </div>
-        </div>
-      </transition-group>
-    </section>
-    <!-- 弹出窗口 -->
-    <div v-if="showModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <h3>{{ selectedProduct.product_name }}</h3>
-        <img
-          :src="selectedProduct.image"
-          alt="Product Image"
-          class="modal-image"
-        />
-        <div class="modal-details">
-          <p><strong>商品描述:</strong> {{ selectedProduct.description }}</p>
-          <p><strong>商品详情:</strong></p>
-          <div class="details-container">{{ selectedProduct.details }}</div>
-          <p><strong>价格:</strong> {{ selectedProduct.price }} 元</p>
-          <p><strong>库存数量:</strong> {{ selectedProduct.stock_quantity }}</p>
-          <p><strong>单位:</strong> {{ selectedProduct.unit }}</p>
-          <p><strong>销量:</strong> {{ selectedProduct.sales }}</p>
-          <p>
-            <strong>评分:</strong> {{ selectedProduct.score }} / 5 ({{
-              selectedProduct.rating_count
-            }}
-            人评分)
-          </p>
-          <p>
-            <strong>类别:</strong> {{ selectedProduct.category.category_name }}
-          </p>
-          <p>
-            <strong>上架时间:</strong>
-            {{ formatDate(selectedProduct.listing_date) }}
-          </p>
-          <span v-if="selectedProduct.suggest" class="recommended-label"
-            >推荐</span
-          >
-        </div>
-        <button class="btn btn-secondary" @click="closeModal">关闭</button>
-      </div>
-    </div>
-
-    <!-- 滑动控制箭头 -->
-    <div class="slider-controls">
-      <button class="slider-arrow" @click="prevPage">&lt;</button>
-      <div class="pagination">
-        <span
-          v-for="(page, index) in paginatedProducts.length"
-          :key="index"
-          class="dot"
-          :class="{ active: index === currentPage }"
-          @click="goToPage(index)"
-        ></span>
-      </div>
-      <button class="slider-arrow" @click="nextPage">&gt;</button>
-    </div>
-    <!-- 页脚 -->
-    <footer class="footer">
-      <div class="container">
-        <span>&copy; 2024 anka. 版权所有.</span>
-      </div>
-    </footer>
-
-    <!-- 联系我们 模态框 -->
-    <div
-      class="modal fade"
-      id="contactModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="contactModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="contactModalLabel">联系我们</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p>您可以通过以下方式联系我们：</p>
-            <ul>
-              <li>电子邮件: support@example.com</li>
-              <li>电话: 123-456-7890</li>
-            </ul>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              关闭
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
-import { nextTick } from "vue";
 
 export default {
   data() {
     return {
-      products: [],
-      paginatedProducts: [],
-      currentPage: 0,
-      mediaUrl: "http://localhost:8000", // 将其设置为你的后端基础 URL，省略 /media/
-      userProfile: null, // 用户信息对象
-      avatarUrl: null, // 头像URL
-      showModal: false, // 控制模态框显示
-      selectedProduct: null, // 当前选中的商品
+      favorites: [], // 初始化为空数组
+      mediaUrl: "http://localhost:8000",
+      userProfile: null,
+      avatarUrl: null,
     };
   },
   mounted() {
-    this.fetchProducts();
+    this.fetchFavorites();
     this.fetchUserProfile(); // 添加获取用户信息的方法
   },
   methods: {
-    fetchProducts() {
-      axios
-        .get("http://127.0.0.1:8000/api/products/")
-        .then((response) => {
-          this.products = response.data;
-          this.prepareProducts();
-          nextTick(() => {
-            this.startAutoSlide();
-          });
-        })
-        .catch((error) => {
-          console.error("Failed to fetch products:", error);
-        });
-    },
     fetchUserProfile() {
       axios
         .get("http://localhost:8000/api/user/profile/")
@@ -255,54 +102,28 @@ export default {
           console.error("Failed to fetch user profile:", error);
         });
     },
-    prepareProducts() {
-      const recommendedProducts = this.products.filter((p) => p.recommended);
-      const nonRecommendedProducts = this.products.filter(
-        (p) => !p.recommended
-      );
-      const shuffledProducts = [
-        ...recommendedProducts,
-        ...nonRecommendedProducts.sort(() => 0.5 - Math.random()),
-      ];
-
-      this.paginatedProducts = [];
-      while (shuffledProducts.length) {
-        this.paginatedProducts.push(shuffledProducts.splice(0, 3));
-      }
-    },
-    startAutoSlide() {
-      setInterval(() => {
-        this.currentPage =
-          (this.currentPage + 1) % this.paginatedProducts.length;
-      }, 20000); // 每20秒自动滑动一页
-    },
-    handleImageError(event) {
-      event.target.src = "./assets/default.png"; // 使用默认图片路径替换损坏的图片
-    },
-    prevPage() {
-      this.currentPage =
-        (this.currentPage - 1 + this.paginatedProducts.length) %
-        this.paginatedProducts.length;
-    },
-    nextPage() {
-      this.currentPage = (this.currentPage + 1) % this.paginatedProducts.length;
-    },
-    goToPage(index) {
-      this.currentPage = index;
-    },
-    openContactModal() {
-      this.$refs.contactModal.show();
-    },
     goToAccount() {
       this.$router.push("/account");
     },
-    showProductDetails(product) {
-      this.selectedProduct = product;
-      this.showModal = true;
+    fetchFavorites() {
+      axios
+        .get("http://127.0.0.1:8000/api/favorites/")
+        .then((response) => {
+          this.favorites = response.data.items || []; // 确保 items 存在
+        })
+        .catch((error) => {
+          console.error("Failed to fetch favorites:", error);
+        });
     },
-    closeModal() {
-      this.showModal = false;
-      this.selectedProduct = null;
+    removeFromFavorites(itemId) {
+      axios
+        .delete(`http://127.0.0.1:8000/api/favorite-items/${itemId}/`)
+        .then(() => {
+          this.fetchFavorites();
+        })
+        .catch((error) => {
+          console.error("Failed to remove favorite item:", error);
+        });
     },
     formatDate(dateString) {
       const options = { year: "numeric", month: "long", day: "numeric" };
@@ -312,6 +133,60 @@ export default {
 };
 </script>
 
+<style scoped>
+/* 样式与其他组件保持一致 */
+.favorite-section {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  max-width: 800px;
+  margin: 20px auto;
+}
+
+.favorite-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.favorite-item {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 200px;
+  text-align: center;
+}
+
+.favorite-item img {
+  max-width: 100%;
+  border-radius: 10px;
+}
+
+.favorite-item h3 {
+  font-size: 1.25rem;
+  margin: 10px 0;
+}
+
+.favorite-item p {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.favorite-item .btn-danger {
+  background-color: #dc3545;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.favorite-item .btn-danger:hover {
+  background-color: #c82333;
+}
+</style>
 <style scoped>
 /* 设置背景图片覆盖整个网页，并固定不动 */
 .app-container {
