@@ -58,3 +58,27 @@ class UserSerializer(serializers.ModelSerializer):
         profile.save()
 
         return instance
+    
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'confirm_password', 'phone_number', 'email']
+
+    def validate(self, data):
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError("两次输入的密码不一致")
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('confirm_password')
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            password=validated_data['password'],
+            email=validated_data['email'],
+            phone_number=validated_data['phone_number']
+        )
+        UserProfile.objects.create(user=user)
+        return user

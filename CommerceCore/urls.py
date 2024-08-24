@@ -3,9 +3,10 @@ from django.urls import path, include, re_path
 from rest_framework.routers import DefaultRouter
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import ProductViewSet, ShoppingCartViewSet, CustomAuthToken,UserViewSet,CatagoryViewSet
+from .views import ProductViewSet, ShoppingCartViewSet,UserViewSet,CatagoryViewSet,RegisterView,CustomTokenObtainPairView
 from . import views
 from django.views.static import serve as static_serve
+from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet)
@@ -19,8 +20,10 @@ urlpatterns = [
     path('productsver2/', views.product_list_ver2, name='product_list_ver2'),
     path('', views.home, name='home'),
     path('api/', include(router.urls)),
-    path('api/login/', CustomAuthToken.as_view(), name='api_login'),
     re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': settings.MEDIA_ROOT}),
+    path('api/register/', RegisterView.as_view(), name='register'),
+    path('api/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
 
 ]

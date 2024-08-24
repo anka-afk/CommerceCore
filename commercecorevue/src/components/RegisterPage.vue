@@ -8,16 +8,16 @@
       </a>
     </nav>
 
-    <!-- 登录表单 -->
+    <!-- 注册表单 -->
     <section class="login-section">
       <div class="login-card">
         <!-- 网站Logo -->
         <img src="../assets/logo.png" alt="隙间小铺" class="login-logo" />
 
-        <!-- 登录标题 -->
-        <h2 class="login-title">登录</h2>
+        <!-- 注册标题 -->
+        <h2 class="login-title">注册</h2>
 
-        <form @submit.prevent="login">
+        <form @submit.prevent="register">
           <div class="form-group">
             <label for="username">用户名</label>
             <input
@@ -38,29 +38,85 @@
               placeholder="请输入密码"
             />
           </div>
-          <!-- 登录按钮 -->
-          <button type="submit" class="btn btn-primary login-button">
-            登录
+          <div class="form-group">
+            <label for="confirmPassword">确认密码</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              v-model="confirmPassword"
+              required
+              placeholder="请再次输入密码"
+            />
+            <p v-if="passwordMismatch" class="error-message">
+              两次输入的密码不一致
+            </p>
+          </div>
+          <div class="form-group">
+            <label for="phone">电话号码</label>
+            <input
+              type="text"
+              id="phone"
+              v-model="phone"
+              required
+              placeholder="请输入电话号码"
+            />
+          </div>
+          <div class="form-group">
+            <label for="email">电子邮箱</label>
+            <input
+              type="email"
+              id="email"
+              v-model="email"
+              required
+              placeholder="请输入电子邮箱"
+            />
+          </div>
+
+          <div class="form-group terms-checkbox">
+            <label for="terms">
+              <input type="checkbox" id="terms" v-model="agreedToTerms" />
+              我已阅读并同意
+              <a href="#" @click.prevent="showTermsModal">服务条款与隐私政策</a>
+            </label>
+          </div>
+
+          <!-- 注册按钮 -->
+          <button
+            type="submit"
+            class="btn btn-primary login-button"
+            :disabled="!agreedToTerms"
+          >
+            注册
           </button>
         </form>
 
-        <!-- 注册账号和忘记密码按钮 -->
+        <!-- 已有账户 -->
         <div class="additional-actions">
-          <button class="btn btn-secondary small-button" @click="goToRegister">
-            注册账号
-          </button>
-          <button
-            class="btn btn-secondary small-button"
-            @click="forgotPassword"
+          <router-link to="/login" class="small-text"
+            >已有账户? 点击登录</router-link
           >
-            忘记密码
-          </button>
         </div>
-
-        <!-- 错误提示 -->
-        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       </div>
     </section>
+
+    <!-- 服务条款与隐私政策 模态框 -->
+    <div v-if="showModal" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <h3>服务条款与隐私政策</h3>
+        <p><strong>隐私政策</strong></p>
+        <p>邮箱为本站服务的唯一凭证，请妥善保管。</p>
+        <p>
+          用户密码均为密文储存，无法解密，但出于安全起见还是请使用随机密码或使用密码管理器。
+        </p>
+        <p><strong>使用条款</strong></p>
+        <p>在使用服务时，需遵循站点和节点所在国家的法律。</p>
+        <p>对于免费用户，本站有权在不通知的情况下删除账户。</p>
+        <p>
+          任何违反使用条款的用户，我们将会删除违规账户并收回使用本站服务的权利。
+        </p>
+        <button class="btn btn-success" @click="closeModal">了解</button>
+      </div>
+    </div>
 
     <!-- 页脚 -->
     <footer class="footer">
@@ -79,39 +135,56 @@ export default {
     return {
       username: "",
       password: "",
-      errorMessage: "",
+      confirmPassword: "",
+      phone: "",
+      email: "",
+      agreedToTerms: false,
+      showModal: false,
+      passwordMismatch: false,
     };
   },
+  watch: {
+    confirmPassword() {
+      this.passwordMismatch = this.password !== this.confirmPassword;
+    },
+  },
   methods: {
-    async login() {
+    async register() {
+      if (this.passwordMismatch) {
+        return;
+      }
+
       try {
-        const response = await axios.post("http://127.0.0.1:8000/api/login/", {
-          username: this.username,
-          password: this.password,
-        });
+        const response = await axios.post(
+          "http://127.0.0.1:8000/api/register/",
+          {
+            username: this.username,
+            password: this.password,
+            confirm_password: this.confirmPassword,
+            phone_number: this.phone, // 确保字段名称与后端一致
+            email: this.email,
+          }
+        );
 
-        const accessToken = response.data.access;
-        const refreshToken = response.data.refresh;
-
-        localStorage.setItem("access_token", accessToken);
-        localStorage.setItem("refresh_token", refreshToken);
-
-        // 设置 axios 默认的 Authorization 头部
-        axios.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${accessToken}`;
-
-        this.$router.push("/home");
+        if (response.status === 201) {
+          // 注册成功，跳转到登录页面
+          this.$router.push("/login");
+        } else {
+          console.error("注册失败:", response.data);
+        }
       } catch (error) {
-        this.errorMessage = "登录失败，请检查用户名和密码是否正确。";
+        console.error(
+          "注册失败:",
+          error.response ? error.response.data : error.message
+        );
       }
     },
 
-    goToRegister() {
-      this.$router.push("/register");
+    showTermsModal() {
+      this.showModal = true;
     },
-    forgotPassword() {
-      this.$router.push("/forgot-password");
+    closeModal() {
+      this.showModal = false;
     },
   },
 };
@@ -201,19 +274,58 @@ export default {
 
 .additional-actions {
   margin-top: 1rem;
-  display: flex;
-  justify-content: space-between;
 }
 
-.small-button {
-  width: 48%;
-  padding: 0.5rem;
+.small-text {
   font-size: 0.875rem;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.small-text:hover {
+  text-decoration: underline;
 }
 
 .error-message {
   color: red;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 600px;
+  width: 100%;
+  text-align: left;
+  overflow-y: auto;
+  max-height: 80vh;
+  backdrop-filter: blur(10px);
+}
+
+.modal-content button {
+  display: block;
+  margin: 1rem auto 0;
+  padding: 0.5rem 1rem;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
 </style>
 <style scoped>
@@ -551,5 +663,26 @@ export default {
 .slide-fade-leave-to {
   transform: translateX(20px);
   opacity: 0;
+}
+
+.terms-checkbox label {
+  display: flex;
+  align-items: center;
+  white-space: nowrap; /* 防止换行 */
+  font-size: 14px; /* 适当调整文本大小 */
+}
+
+.terms-checkbox input[type="checkbox"] {
+  margin-right: 0px; /* 调整复选框与文本之间的间距 */
+}
+
+.terms-checkbox a {
+  color: #007bff; /* 设置链接颜色 */
+  text-decoration: none;
+  margin-left: 4px; /* 调整链接与前面文本的间距 */
+}
+
+.terms-checkbox a:hover {
+  text-decoration: underline;
 }
 </style>

@@ -4,7 +4,7 @@ import Home from "../components/HomePage.vue";
 import Login from "../components/LoginPage.vue";
 import Cart from "../components/CartPage.vue";
 import UserAccount from "@/components/UserAccount.vue";
-
+import Register from "@/components/RegisterPage.vue";
 const routes = [
   {
     path: "/products",
@@ -36,6 +36,11 @@ const routes = [
     name: "account",
     component: UserAccount,
   },
+  {
+    path: "/register",
+    name: "RegisterPage",
+    component: Register,
+  },
 ];
 
 const router = createRouter({
@@ -43,12 +48,10 @@ const router = createRouter({
   routes,
 });
 
-// 使用 beforeEach 钩子进行身份验证检查
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access_token");
 
-  // 如果没有 token 并且试图访问非登录页面，重定向到登录页面
-  if (to.name !== "LoginPage" && !token) {
+  if (!token && to.name !== "LoginPage") {
     next({ name: "LoginPage" });
   } else {
     next();
