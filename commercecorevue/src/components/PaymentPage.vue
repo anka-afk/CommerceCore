@@ -7,7 +7,7 @@
         <div class="cart-items">
           <div class="cart-item" v-for="item in cartItems" :key="item.id">
             <img
-              :src="item.product.image"
+              :src="getImageUrl(item.product.image)"
               alt="Product Image"
               class="cart-item-image"
             />
@@ -36,7 +36,7 @@ export default {
   data() {
     return {
       cartItems: [], // 购物车中的商品列表
-      mediaUrl: "http://localhost:8000", // 将其设置为你的后端基础 URL，省略 /media/
+      mediaUrl: "http://localhost:8000", // 后端服务器基础URL
     };
   },
   computed: {
@@ -60,6 +60,11 @@ export default {
         .catch((error) => {
           console.error("Failed to fetch cart items:", error);
         });
+    },
+
+    getImageUrl(imagePath) {
+      // 构建完整的图片URL
+      return `${this.mediaUrl}${imagePath}`;
     },
 
     proceedToPayment() {

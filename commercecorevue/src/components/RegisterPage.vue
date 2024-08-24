@@ -79,6 +79,7 @@
               <a href="#" @click.prevent="showTermsModal">服务条款与隐私政策</a>
             </label>
           </div>
+          <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
           <!-- 注册按钮 -->
           <button
@@ -141,6 +142,7 @@ export default {
       agreedToTerms: false,
       showModal: false,
       passwordMismatch: false,
+      errorMessage: "", // 错误信息
     };
   },
   watch: {
@@ -151,6 +153,7 @@ export default {
   methods: {
     async register() {
       if (this.passwordMismatch) {
+        this.errorMessage = "两次输入的密码不一致";
         return;
       }
 
@@ -161,22 +164,27 @@ export default {
             username: this.username,
             password: this.password,
             confirm_password: this.confirmPassword,
-            phone_number: this.phone, // 确保字段名称与后端一致
+            phone_number: this.phone,
             email: this.email,
           }
         );
 
         if (response.status === 201) {
-          // 注册成功，跳转到登录页面
           this.$router.push("/login");
-        } else {
-          console.error("注册失败:", response.data);
         }
       } catch (error) {
-        console.error(
-          "注册失败:",
-          error.response ? error.response.data : error.message
-        );
+        if (error.response && error.response.data) {
+          const errors = error.response.data;
+          if (errors.username) {
+            this.errorMessage = "用户名已经被注册";
+          } else if (errors.email) {
+            this.errorMessage = "邮箱已经被注册";
+          } else {
+            this.errorMessage = "注册失败，请检查输入信息";
+          }
+        } else {
+          this.errorMessage = "注册失败，请稍后重试";
+        }
       }
     },
 
@@ -406,5 +414,10 @@ export default {
 
 .terms-checkbox a:hover {
   text-decoration: underline;
+}
+
+.error-message {
+  color: red;
+  margin-top: 1rem;
 }
 </style>

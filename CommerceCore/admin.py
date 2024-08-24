@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Category, Product, Order, OrderDetail, ShoppingCart, CartItem, Payment,UserProfile,FavoriteList, FavoriteItem,Announcement
+from .models import User, Category, Product, Order, OrderDetail, ShoppingCart, CartItem,UserProfile,FavoriteList, FavoriteItem,Announcement
 from django import forms
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
@@ -11,7 +11,6 @@ admin.site.register(Order)
 admin.site.register(OrderDetail)
 admin.site.register(ShoppingCart)
 admin.site.register(CartItem)
-admin.site.register(Payment)
 admin.site.register(UserProfile)
 admin.site.register(FavoriteList)
 admin.site.register(FavoriteItem)

@@ -33,7 +33,7 @@
               :src="product.image"
               class="card-img-top"
               :alt="product.product_name"
-              @click="showProductDetails(product)"
+              @click="showProductDetails1(product)"
               @error="handleImageError($event)"
             />
             <div class="card-body d-flex flex-column">
@@ -231,9 +231,15 @@ export default {
           alert("添加到购物车失败");
         });
     },
-    showProductDetails(product) {
+    showProductDetails1(product) {
       this.selectedProduct = product;
       this.showModal = true;
+    },
+    showProductDetails(product) {
+      this.$router.push({
+        name: "ProductDetail",
+        params: { id: product.product_id },
+      });
     },
     closeModal() {
       this.showModal = false;

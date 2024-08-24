@@ -11,11 +11,12 @@
           :key="item.product.product_id"
         >
           <div class="cart-item-content">
-            <!-- 修改图片的 src 绑定 -->
+            <!-- 修改图片的 src 绑定，并添加点击事件 -->
             <img
               :src="`${mediaUrl}${item.product.image}`"
               alt="商品图片"
               class="cart-item-image"
+              @click="goToProductDetail(item.product.product_id)"
             />
             <div class="cart-item-details">
               <h4 class="cart-item-name">{{ item.product.product_name }}</h4>
@@ -76,7 +77,6 @@ export default {
           console.error("Failed to fetch cart items:", error);
         });
     },
-
     increaseQuantity(item) {
       axios
         .post("http://127.0.0.1:8000/api/cart/update_quantity/", {
@@ -123,9 +123,14 @@ export default {
     checkout() {
       alert("结算功能暂未实现"); // 结算逻辑根据需要实现
     },
+    goToProductDetail(productId) {
+      // 使用 Vue Router 导航到商品详情页
+      this.$router.push({ name: "ProductDetail", params: { id: productId } });
+    },
   },
 };
 </script>
+
 <style scoped>
 /* 购物车样式 */
 .cart-items-container {
@@ -172,6 +177,7 @@ export default {
   object-fit: cover;
   border-radius: 10px;
   margin-right: 1rem;
+  cursor: pointer; /* 增加手型指针，提示图片可点击 */
 }
 
 .cart-item-details {

@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from .models import Product,ShoppingCart,Order,OrderDetail,Payment,Category,CartItem,User,UserProfile,FavoriteList, FavoriteItem,Announcement
+from .models import Product,ShoppingCart,Order,OrderDetail,Category,CartItem,User,UserProfile,FavoriteList, FavoriteItem,Announcement
 from rest_framework import viewsets,serializers
-from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer,UserSerializer,CategorySerializer,RegisterSerializer,FavoriteListSerializer, FavoriteItemSerializer,AnnouncementSerializer
+from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer,UserSerializer,CategorySerializer,RegisterSerializer,FavoriteListSerializer, FavoriteItemSerializer,AnnouncementSerializer,ProductDetailSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -189,13 +189,16 @@ class UserViewSet(viewsets.ViewSet):
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
-    
     def post(self, request, *args, **kwargs):
+        print("Incoming data:", request.data)  # 打印请求数据
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "注册成功"}, status=status.HTTP_201_CREATED)
+        print("Validation errors:", serializer.errors)  # 打印验证错误
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
     
 class FavoriteListViewSet(viewsets.ModelViewSet):
     queryset = FavoriteList.objects.all()
@@ -257,3 +260,7 @@ def logout_view(request):
     # 处理登出操作
     logout(request)
     return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
+
+class ProductDetailViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductDetailSerializer

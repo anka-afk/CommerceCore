@@ -194,4 +194,9 @@ export default {
   max-width: 1140px;
   margin: 0 auto;
 }
+
+.navbar-logo {
+  height: 40px;
+  margin-right: 0.5rem;
+}
 </style>

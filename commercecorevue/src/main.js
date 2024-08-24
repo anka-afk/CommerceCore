@@ -4,6 +4,7 @@ import router from "./router";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 import BaseTemplate from "@/components/BaseTemplate.vue";
+import "./assets/global.css";
 
 const token = localStorage.getItem("access_token");
 if (token) {

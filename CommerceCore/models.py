@@ -60,7 +60,7 @@ class Product(models.Model):
     details = models.TextField(verbose_name="商品详情", blank=True)
     price = models.DecimalField(verbose_name="价格", max_digits=10, decimal_places=2)
     stock_quantity = models.IntegerField(verbose_name="库存数量")
-    category = models.ForeignKey(Category, verbose_name="类别", on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, verbose_name="类别", on_delete=models.CASCADE,related_name="products")
     listing_date = models.DateTimeField(verbose_name="上架时间", auto_now_add=True)
     suggest = models.BooleanField(verbose_name="推荐", default=False)
     score = models.IntegerField(verbose_name="评分", default=0)
@@ -69,28 +69,70 @@ class Product(models.Model):
     def __str__(self):
         return self.product_name
 
+class Comment(models.Model):
+    product = models.ForeignKey(Product, related_name='comments', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField(verbose_name="评论内容")
+    rating = models.IntegerField(verbose_name="评分", default=0)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="评论时间")
 
-
+    def __str__(self):
+        return f"{self.user.username} - {self.product.product_name} - {self.rating}星"
 class Order(models.Model):
+    # 状态名称及描述
+    PENDING = 'pending'  # 待处理
+    PROCESSING = 'processing'  # 处理中
+    SHIPPED = 'shipped'  # 已发货
+    OUT_FOR_DELIVERY = 'out_for_delivery'  # 派送中
+    DELIVERED = 'delivered'  # 已送达
+    CANCELLED = 'cancelled'  # 已取消
+    AWAITING_PAYMENT = 'awaiting_payment'  # 等待支付
+    PAYMENT_FAILED = 'payment_failed'  # 支付失败
+    REFUNDED = 'refunded'  # 已退款
+    RETURN_REQUESTED = 'return_requested'  # 退货申请中
+    RETURNED = 'returned'  # 已退货
+    AWAITING_PICKUP = 'awaiting_pickup'  # 等待用户自提
+
+    ORDER_STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (PROCESSING, 'Processing'),
+        (AWAITING_PAYMENT, 'Awaiting Payment'),
+        (PAYMENT_FAILED, 'Payment Failed'),
+        (SHIPPED, 'Shipped'),
+        (OUT_FOR_DELIVERY, 'Out for Delivery'),
+        (DELIVERED, 'Delivered'),
+        (CANCELLED, 'Cancelled'),
+        (REFUNDED, 'Refunded'),
+        (RETURN_REQUESTED, 'Return Requested'),
+        (RETURNED, 'Returned'),
+        (AWAITING_PICKUP, 'Awaiting Pickup'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="用户")
     order_date = models.DateTimeField(verbose_name="订单时间", auto_now_add=True)
     total_amount = models.DecimalField(verbose_name="总金额", max_digits=10, decimal_places=2)
-    order_status = models.CharField(verbose_name="订单状态", max_length=50)
-    pay = models.BooleanField(verbose_name="支付", default=False)
+    order_status = models.CharField(verbose_name="订单状态", max_length=20, choices=ORDER_STATUS_CHOICES, default=PENDING)
+    payment_method = models.CharField(max_length=50, verbose_name="支付方式", blank=True, default="")
 
     def __str__(self):
         return f"Order {self.id} by {self.user.username}"
 
 class OrderDetail(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, verbose_name="订单")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="商品", to_field='product_id')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, verbose_name="订单", related_name="order_details")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="商品")
+    product_name = models.CharField(verbose_name="商品名称", max_length=100)  # 记录下商品的名称
     quantity = models.IntegerField(verbose_name="数量")
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="单价")
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="总价", default=0)
-    address = models.CharField(max_length=255, verbose_name="地址", blank=True, default="")
+    discount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="折扣", default=0.00)  # 商品折扣
+    tax = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="税额", default=0.00)  # 商品税额
+    
+    @property
+    def total_price(self):
+        return (self.unit_price - self.discount) * self.quantity + self.tax
 
     def __str__(self):
-        return f"Detail for Order {self.order.id}"
+        return f"Detail for Order {self.order.id} - Product {self.product.product_name}"
+
 
 class ShoppingCart(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="用户")
@@ -106,15 +148,6 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"CartItem {self.id} in Cart {self.cart.id}"
-
-class Payment(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, verbose_name="订单")
-    payment_method = models.CharField(max_length=50, verbose_name="支付方式")
-    payment_status = models.CharField(max_length=50, verbose_name="支付状态")
-    payment_date = models.DateTimeField(auto_now_add=True, verbose_name="支付时间")
-
-    def __str__(self):
-        return f"Payment {self.id} for Order {self.order.id}"
 
 class GoodsBrowser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="用户")

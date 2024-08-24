@@ -1,8 +1,15 @@
 # serializers.py
 from rest_framework import serializers
-from .models import Product, ShoppingCart, CartItem,User,UserProfile,Category,FavoriteItem, FavoriteList,Announcement
+from .models import Product, ShoppingCart, CartItem,User,UserProfile,Category,FavoriteItem, FavoriteList,Announcement,Comment
 
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = '__all__'
 class ProductSerializer(serializers.ModelSerializer):
+    category = CategorySerializer()  # 使用嵌套序列化器
+
     class Meta:
         model = Product
         fields = '__all__'
@@ -26,10 +33,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ['avatar', 'birthdate', 'bio']
 
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = '__all__'
+
 class UserSerializer(serializers.ModelSerializer):
     
 
@@ -67,6 +71,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'password', 'confirm_password', 'phone_number', 'email']
 
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("该邮箱已被使用")
+        return value
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("该用户名已被使用")
+        return value
+
     def validate(self, data):
         if data['password'] != data['confirm_password']:
             raise serializers.ValidationError("两次输入的密码不一致")
@@ -84,6 +98,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 class FavoriteItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
+
     class Meta:
         model = FavoriteItem
         fields = ['product', 'created_at']
@@ -98,4 +114,18 @@ class FavoriteListSerializer(serializers.ModelSerializer):
 class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
+        fields = '__all__'
+        
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'user', 'text', 'rating', 'created_at']
+
+class ProductDetailSerializer(serializers.ModelSerializer):
+    comments = CommentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Product
         fields = '__all__'

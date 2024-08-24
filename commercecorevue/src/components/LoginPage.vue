@@ -111,7 +111,7 @@ export default {
       this.$router.push("/register");
     },
     forgotPassword() {
-      this.$router.push("/forgot-password");
+      this.$router.push("/forget-password");
     },
   },
 };
