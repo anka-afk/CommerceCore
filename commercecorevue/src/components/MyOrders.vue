@@ -31,12 +31,12 @@
             <p><strong>折扣：</strong>{{ detail.discount }} 元</p>
             <p><strong>税额：</strong>{{ detail.tax }} 元</p>
             <p>
-              <strong>总价：</strong
-              >{{
+              <strong>总价：</strong>
+              {{
                 (
-                  detail.unit_price * detail.quantity -
-                  detail.discount +
-                  detail.tax
+                  Number(detail.unit_price) * Number(detail.quantity) -
+                  Number(detail.discount) +
+                  Number(detail.tax)
                 ).toFixed(2)
               }}
               元
@@ -65,6 +65,8 @@ export default {
       axios
         .get("http://localhost:8000/api/orders/")
         .then((response) => {
+          console.log(response.data); // 打印API返回的数据
+
           this.orders = response.data;
         })
         .catch((error) => {
