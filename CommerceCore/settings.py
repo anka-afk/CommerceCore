@@ -93,10 +93,20 @@ WSGI_APPLICATION = "CommerceCore.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+#DATABASES = {
+#    "default": {
+#        "ENGINE": "django.db.backends.sqlite3",
+#        "NAME": BASE_DIR / "db.sqlite3",
+#    }
+#}
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',  # 使用MySQL数据库
+        'NAME': 'commercecore',          # 数据库名称
+        'USER': 'root',          # 数据库用户名
+        'PASSWORD': '555555',  # 数据库密码
+        'HOST': 'localhost',                   # 数据库主机，通常为localhost
+        'PORT': '3306',                        # MySQL默认端口是3306
     }
 }
 
