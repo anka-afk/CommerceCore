@@ -6,6 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import BaseTemplate from "@/components/BaseTemplate.vue";
 import ModalTemplate from "@/components/ModalTemplate.vue";
 import "./assets/global.css";
+import store from "./store"; // 引入 Vuex Store
 
 // 获取初始的 access_token 并设置 axios 请求头
 const token = localStorage.getItem("access_token");
@@ -16,6 +17,7 @@ if (token) {
 const app = createApp(App);
 app.component("BaseTemplate", BaseTemplate);
 app.component("ModalTemplate", ModalTemplate);
+app.use(store); // 使用 Vuex Store
 
 app.use(router).mount("#app");
 

@@ -169,7 +169,7 @@ REST_FRAMEWORK = {
 
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',  # 默认要求认证
+        'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
@@ -190,3 +190,6 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': False,  # 当用户使用 refresh token 刷新时，是否更新用户的 last_login 字段
 
 }
+
+# settings.py
+APPEND_SLASH = False

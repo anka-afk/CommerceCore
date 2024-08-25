@@ -46,86 +46,50 @@
 </template>
 
 <script>
-import axios from "axios";
+import { mapGetters, mapActions } from "vuex";
 
 export default {
   data() {
     return {
-      cartItems: [],
       mediaUrl: "http://localhost:8000", // 将其设置为你的后端基础 URL，省略 /media/
     };
   },
   computed: {
-    totalAmount() {
-      return this.cartItems.reduce(
-        (total, item) => total + item.product.price * item.quantity,
-        0
-      );
-    },
+    // 从 Vuex 获取购物车内容和总金额
+    ...mapGetters(["cartItems", "totalAmount"]),
   },
   mounted() {
-    this.fetchCartItems();
+    this.fetchCartItems(); // 获取购物车数据
   },
   methods: {
-    fetchCartItems() {
-      axios
-        .get("http://127.0.0.1:8000/api/cart/")
-        .then((response) => {
-          this.cartItems = response.data.items;
-        })
-        .catch((error) => {
-          console.error("Failed to fetch cart items:", error);
-        });
-    },
+    // 通过 Vuex actions 来操作购物车
+    ...mapActions([
+      "fetchCartItems",
+      "addItemToCart",
+      "removeItemFromCart",
+      "clearCartItems",
+    ]),
+
     increaseQuantity(item) {
-      axios
-        .post("http://127.0.0.1:8000/api/cart/update_quantity/", {
-          product_id: item.product.product_id,
-          quantity: item.quantity + 1,
-        })
-        .then(() => {
-          item.quantity++;
-        })
-        .catch((error) => {
-          console.error("Failed to update quantity:", error);
-        });
+      this.addItemToCart({ ...item, quantity: 1 }); // 增加商品数量
     },
+
     decreaseQuantity(item) {
       if (item.quantity > 1) {
-        axios
-          .post("http://127.0.0.1:8000/api/cart/update_quantity/", {
-            product_id: item.product.product_id,
-            quantity: item.quantity - 1,
-          })
-          .then(() => {
-            item.quantity--;
-          })
-          .catch((error) => {
-            console.error("Failed to update quantity:", error);
-          });
+        this.addItemToCart({ ...item, quantity: -1 }); // 减少商品数量
       }
     },
+
     removeFromCart(item) {
-      axios
-        .post("http://127.0.0.1:8000/api/cart/remove_item/", {
-          product_id: item.product.product_id,
-        })
-        .then(() => {
-          this.cartItems = this.cartItems.filter(
-            (cartItem) =>
-              cartItem.product.product_id !== item.product.product_id
-          );
-        })
-        .catch((error) => {
-          console.error("Failed to remove item from cart:", error);
-        });
+      this.removeItemFromCart(item.product.product_id); // 移除商品
     },
+
     checkout() {
-      alert("结算功能暂未实现"); // 结算逻辑根据需要实现
+      this.$router.push({ name: "OrderConfirmation" }); // 跳转到订单确认页面
     },
+
     goToProductDetail(productId) {
-      // 使用 Vue Router 导航到商品详情页
-      this.$router.push({ name: "ProductDetail", params: { id: productId } });
+      this.$router.push({ name: "ProductDetail", params: { id: productId } }); // 跳转到商品详情页
     },
   },
 };

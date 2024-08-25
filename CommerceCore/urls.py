@@ -15,7 +15,10 @@ from .views import (
     FavoriteItemViewSet,
     AnnouncementViewSet,
     logout_view,
-    RemoveFavoriteItemView
+    RemoveFavoriteItemView,
+    OrderCreateAPIView,
+    OrderDetailAPIView,
+    OrderListView
 )
 from django.views.static import serve as static_serve
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -40,7 +43,11 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/logout/', logout_view, name='api_logout'),
     re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': settings.MEDIA_ROOT}),
-    path('api/favorite-items/remove/', RemoveFavoriteItemView.as_view(), name='remove_favorite_item')
+    path('api/favorite-items/remove/', RemoveFavoriteItemView.as_view(), name='remove_favorite_item'),
+    path('api/orders/create/', OrderCreateAPIView.as_view(), name='order_create'),
+    path('api/orders/<int:number>/', OrderDetailAPIView.as_view(), name='order_detail'),
+    path('api/orders/', OrderListView.as_view(), name='order_list'),
+
 
 ]
 

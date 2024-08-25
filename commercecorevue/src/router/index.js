@@ -9,10 +9,12 @@ import FavoriteList from "../components/FavoriteList.vue";
 import HelpPage from "../components/HelpPage.vue";
 import AnnouncementPage from "../components/AnnouncementPage.vue";
 import SettingsPage from "../components/SettingsPage.vue";
-import PaymentPage from "../components/PaymentPage.vue";
 import ForgetPasswordPage from "../components/ForgetPasswordPage.vue";
 import ProductDetailPage from "../components/ProductDetailPage.vue";
 import TestPage from "../components/TestPage.vue";
+import OrderConfirmation from "../components/OrderConfirmation.vue";
+import PaymentPage from "../components/PaymentPage.vue";
+
 const routes = [
   {
     path: "/products",
@@ -70,11 +72,6 @@ const routes = [
     component: SettingsPage,
   },
   {
-    path: "/payment",
-    name: "PaymentPage",
-    component: PaymentPage,
-  },
-  {
     path: "/forget-password",
     name: "ForgetPasswordPage",
     component: ForgetPasswordPage,
@@ -88,6 +85,21 @@ const routes = [
     path: "/test",
     name: "TestPage",
     component: TestPage,
+  },
+  {
+    path: "/order-confirmation",
+    name: "OrderConfirmation",
+    component: OrderConfirmation,
+  },
+  {
+    path: "/payment/:orderId",
+    name: "PaymentPage",
+    component: PaymentPage,
+  },
+  {
+    path: "/orders",
+    name: "MyOrders",
+    component: () => import("@/components/MyOrders.vue"),
   },
 ];
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, ShoppingCart, CartItem, User, UserProfile, Category, FavoriteItem, FavoriteList, Announcement, Comment
+from .models import Product, ShoppingCart, CartItem, User, UserProfile, Category, FavoriteItem, FavoriteList, Announcement, Comment,Order, OrderDetail
 from django.db import transaction
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -125,3 +125,14 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
+
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['number', 'user', 'order_date', 'total_amount', 'order_status', 'payment_method']
+
+
+class OrderDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderDetail
+        fields = ['order', 'product', 'product_name', 'quantity', 'unit_price', 'discount', 'tax']

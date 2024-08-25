@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from .models import Product,ShoppingCart,Order,OrderDetail,Category,CartItem,User,UserProfile,FavoriteList, FavoriteItem,Announcement
 from rest_framework import viewsets,serializers
-from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer,UserSerializer,CategorySerializer,RegisterSerializer,FavoriteListSerializer, FavoriteItemSerializer,AnnouncementSerializer,ProductDetailSerializer
+from .serializers import ProductSerializer,ShoppingCartSerializer, CartItemSerializer,UserSerializer,CategorySerializer,RegisterSerializer,FavoriteListSerializer, FavoriteItemSerializer,AnnouncementSerializer,ProductDetailSerializer,OrderSerializer,OrderDetailSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -13,7 +13,7 @@ from rest_framework.decorators import action
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 import logging
-from rest_framework import filters
+from rest_framework import filters,generics
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -21,6 +21,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import logout
 from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny
+import random
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -321,6 +323,55 @@ def logout_view(request):
     logout(request)
     return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
 
-class ProductDetailViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductDetailSerializer
+class OrderCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        with transaction.atomic():
+            # 创建订单
+            order_data = {
+                'user': request.user,
+                'total_amount': request.data['total_amount'],
+                'order_status': Order.AWAITING_PAYMENT,
+                'payment_method': request.data['payment_method'],
+            }
+            order = Order.objects.create(**order_data)
+
+            # 创建订单详情
+            for item in request.data['items']:
+                product = Product.objects.get(product_id=item['product_id'])
+                OrderDetail.objects.create(
+                    order=order,
+                    product=product,
+                    product_name=item['product_name'],
+                    quantity=item['quantity'],
+                    unit_price=item['unit_price'],
+                    discount=item['discount'],
+                    tax=0.00  # 税额如果有需要计算的地方可以自行修改
+                )
+
+            # 清空购物车
+            cart = ShoppingCart.objects.get(user=request.user)
+            cart.cartitem_set.all().delete()
+
+            return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+        
+class OrderDetailAPIView(generics.RetrieveAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    lookup_field = 'number'  
+    def patch(self, request, *args, **kwargs):
+        order = self.get_object()
+        serializer = self.get_serializer(order, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class OrderListView(generics.ListAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # 返回当前登录用户的所有订单
+        return Order.objects.filter(user=self.request.user)
