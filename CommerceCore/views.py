@@ -180,23 +180,35 @@ class UserViewSet(viewsets.ViewSet):
     def delete_account(self, request):
         user = request.user
         password = request.data.get('password')
+        
+        # 验证用户输入的密码是否正确
         if not user.check_password(password):
-            return Response({'error': 'Password incorrect'}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({'error': '密码错误'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 删除用户及其相关联的表项
         user.delete()
-        return Response({'status': 'Account deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        
+        return Response({'status': '账号已成功注销'}, status=status.HTTP_204_NO_CONTENT)
+
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        print("Incoming data:", request.data)  # 打印请求数据
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "注册成功"}, status=status.HTTP_201_CREATED)
-        print("Validation errors:", serializer.errors)  # 打印验证错误
+            user = serializer.save()
+
+            # 注册成功后自动生成 JWT 令牌
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "message": "注册成功",
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            }, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
     
@@ -207,18 +219,66 @@ class FavoriteListViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return FavoriteList.objects.filter(user=self.request.user)
-
-class FavoriteItemViewSet(viewsets.ModelViewSet):
-    serializer_class = FavoriteItemSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        favorite_list = FavoriteList.objects.get(user=self.request.user)
-        return FavoriteItem.objects.filter(favorite_list=favorite_list)
-
     def perform_create(self, serializer):
         favorite_list, created = FavoriteList.objects.get_or_create(user=self.request.user)
         serializer.save(favorite_list=favorite_list)
+
+
+
+class RemoveFavoriteItemView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        try:
+            favorite_list = FavoriteList.objects.get(user=request.user)
+            favorite_item = FavoriteItem.objects.get(favorite_list=favorite_list, product__product_id=product_id)
+            favorite_item.delete()
+            return Response({'status': 'item removed'}, status=status.HTTP_200_OK)
+        except FavoriteItem.DoesNotExist:
+            return Response({'error': 'Item not found in favorites'}, status=status.HTTP_404_NOT_FOUND)
+
+class FavoriteItemViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = FavoriteItem.objects.all()
+    serializer_class = FavoriteItemSerializer
+
+    def list(self, request):
+        favorite_list, created = FavoriteList.objects.get_or_create(user=request.user)
+        favorite_items = FavoriteItem.objects.filter(favorite_list=favorite_list)
+        serializer = FavoriteItemSerializer(favorite_items, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='remove_from_favorites')
+    def remove_from_favorites(self, request):
+        product_id = request.data.get('product_id')
+        try:
+            favorite_list = FavoriteList.objects.get(user=request.user)
+            favorite_item = FavoriteItem.objects.get(favorite_list=favorite_list, product__product_id=product_id)
+            favorite_item.delete()
+            return Response({'status': 'item removed'}, status=status.HTTP_200_OK)
+        except FavoriteItem.DoesNotExist:
+            return Response({'error': 'Item not found in favorites'}, status=status.HTTP_404_NOT_FOUND)
+
+
+    @action(detail=False, methods=['post'], url_path='add_item')
+    def add_item(self, request):
+        product_id = request.data.get('product_id')
+        try:
+            product = Product.objects.get(product_id=product_id)
+            favorite_list, created = FavoriteList.objects.get_or_create(user=request.user)
+            favorite_item, created = FavoriteItem.objects.get_or_create(favorite_list=favorite_list, product=product)
+            if created:
+                return Response({'status': 'item added'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'status': 'item already in favorites'}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+     
+
+
+        
+       
         
 class AnnouncementViewSet(viewsets.ModelViewSet):
     queryset = Announcement.objects.all().order_by('-created_at')

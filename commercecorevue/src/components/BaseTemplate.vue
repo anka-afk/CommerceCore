@@ -155,6 +155,8 @@ export default {
           localStorage.removeItem("refresh_token");
           // 跳转到登录页面
           this.$router.push("/login");
+          // 强制刷新页面清除缓存
+          location.reload();
         })
         .catch((error) => {
           console.error("Failed to logout:", error);

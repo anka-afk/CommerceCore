@@ -80,8 +80,8 @@ export default {
     },
     addToFavorites() {
       axios
-        .post("http://localhost:8000/api/favorite-items/", {
-          product: this.product.product_id,
+        .post("http://localhost:8000/api/favorite-items/add_item/", {
+          product_id: this.product.product_id, // 确保字段名称与后端一致
         })
         .then(() => {
           alert("商品已添加到收藏夹");

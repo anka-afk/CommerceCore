@@ -1,11 +1,13 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
-import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
+import "bootstrap/dist/css/bootstrap.min.css";
 import BaseTemplate from "@/components/BaseTemplate.vue";
+import ModalTemplate from "@/components/ModalTemplate.vue";
 import "./assets/global.css";
 
+// 获取初始的 access_token 并设置 axios 请求头
 const token = localStorage.getItem("access_token");
 if (token) {
   axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -13,47 +15,14 @@ if (token) {
 
 const app = createApp(App);
 app.component("BaseTemplate", BaseTemplate);
-
-// 定期刷新令牌的间隔时间（例如每4分钟刷新一次）
-const refreshInterval = 4 * 60 * 1000;
-
-app.mixin({
-  mounted() {
-    this.refreshTokenInterval = setInterval(() => {
-      const refreshToken = localStorage.getItem("refresh_token");
-      if (refreshToken) {
-        axios
-          .post("http://127.0.0.1:8000/api/token/refresh/", {
-            refresh: refreshToken,
-          })
-          .then((response) => {
-            const newAccessToken = response.data.access;
-            localStorage.setItem("access_token", newAccessToken);
-            axios.defaults.headers.common[
-              "Authorization"
-            ] = `Bearer ${newAccessToken}`;
-          })
-          .catch((error) => {
-            console.error("Failed to refresh access token:", error);
-            // 如果刷新令牌失败，则注销用户并重定向到登录页面
-            clearInterval(this.refreshTokenInterval);
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
-            router.push({ name: "LoginPage" });
-          });
-      }
-    }, refreshInterval);
-  },
-  beforeUnmount() {
-    clearInterval(this.refreshTokenInterval);
-  },
-});
+app.component("ModalTemplate", ModalTemplate);
 
 app.use(router).mount("#app");
 
+// 请求拦截器：在每次请求前确保发送最新的 access_token
 axios.interceptors.request.use(
   (config) => {
-    let accessToken = localStorage.getItem("access_token");
+    const accessToken = localStorage.getItem("access_token");
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -62,34 +31,58 @@ axios.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// 响应拦截器：处理令牌过期和自动刷新
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response.status === 401 && !originalRequest._retry) {
+
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem("refresh_token");
 
-      try {
-        const response = await axios.post(
-          "http://127.0.0.1:8000/api/token/refresh/",
-          { refresh: refreshToken }
-        );
+      if (refreshToken) {
+        try {
+          const response = await axios.post(
+            "http://127.0.0.1:8000/api/token/refresh/",
+            { refresh: refreshToken }
+          );
 
-        const newAccessToken = response.data.access;
-        localStorage.setItem("access_token", newAccessToken);
-        axios.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${newAccessToken}`;
+          const newAccessToken = response.data.access;
+          localStorage.setItem("access_token", newAccessToken);
+          axios.defaults.headers.common[
+            "Authorization"
+          ] = `Bearer ${newAccessToken}`;
+          originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
 
-        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
-        return axios(originalRequest);
-      } catch (err) {
-        console.log("Refresh token failed", err);
-        // 处理刷新失败，重定向到登录页面
+          return axios(originalRequest);
+        } catch (err) {
+          console.log("Failed to refresh token:", err);
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          router.push({ name: "LoginPage" });
+          return Promise.reject(err);
+        }
+      } else {
         router.push({ name: "LoginPage" });
       }
     }
+
+    // 如果还是 401 错误，清除令牌并跳转到登录页面
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      originalRequest._retry
+    ) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      router.push({ name: "LoginPage" });
+    }
+
     return Promise.reject(error);
   }
 );

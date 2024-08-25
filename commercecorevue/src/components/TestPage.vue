@@ -21,7 +21,10 @@
             >
               添加到购物车
             </button>
-            <button class="btn btn-danger" @click="removeFromFavorites(item)">
+            <button
+              class="btn btn-danger"
+              @click="removeFromFavorites(item.id)"
+            >
               移除
             </button>
           </div>
@@ -73,19 +76,26 @@ export default {
           alert("添加到购物车失败");
         });
     },
-    removeFromFavorites(item) {
-      axios
-        .post("http://127.0.0.1:8000/api/favorite-items/remove/", {
-          product_id: item.product.product_id,
-        })
+    removeFromFavorites(productId) {
+      axios({
+        method: "post",
+        url: "http://127.0.0.1:8000/api/favorite-items/remove/",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: {
+          product_id: productId,
+        },
+      })
         .then(() => {
           this.favorites = this.favorites.filter(
-            (favoriteItem) =>
-              favoriteItem.product.product_id !== item.product.product_id
+            (item) => item.product.product_id !== productId
           );
+          alert("商品已从收藏夹移除");
         })
         .catch((error) => {
           console.error("Failed to remove item from favorites:", error);
+          alert("移除收藏夹失败");
         });
     },
 

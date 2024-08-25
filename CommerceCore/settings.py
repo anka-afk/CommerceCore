@@ -106,7 +106,10 @@ DATABASES = {
         'USER': 'root',          # 数据库用户名
         'PASSWORD': '555555',  # 数据库密码
         'HOST': 'localhost',                   # 数据库主机，通常为localhost
-        'PORT': '3306',                        # MySQL默认端口是3306
+        'PORT': '3306',   
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },# MySQL默认端口是3306
     }
 }
 
@@ -166,7 +169,7 @@ REST_FRAMEWORK = {
 
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',  # 默认要求认证
     ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
@@ -176,8 +179,8 @@ AUTH_USER_MODEL = 'CommerceCore.User'
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': False,  # 每次使用 refresh token 获取新的 access token 时是否更新 refresh token
-    'BLACKLIST_AFTER_ROTATION': False,  # 在刷新时是否将旧的 refresh token 加入黑名单
+    'ROTATE_REFRESH_TOKENS': True,  # 每次使用 refresh token 获取新的 access token 时是否更新 refresh token
+    'BLACKLIST_AFTER_ROTATION': True,  # 在刷新时是否将旧的 refresh token 加入黑名单
     'AUTH_TOKEN_CLASSES': (
         'rest_framework_simplejwt.tokens.AccessToken',
     ),

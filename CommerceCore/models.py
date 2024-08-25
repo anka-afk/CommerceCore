@@ -1,14 +1,23 @@
-from django.db import models
+from django.db import models,transaction
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin,User
+import datetime
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email=None, password=None, **extra_fields):
         if not username:
             raise ValueError('用户名必须填写')
         email = self.normalize_email(email)
-        user = self.model(username=username, email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
+        
+        with transaction.atomic():  # 保持事务原子性，确保所有操作同时成功或失败
+            user = self.model(username=username, email=email, **extra_fields)
+            user.set_password(password)
+            user.save(using=self._db)
+
+            # 创建关联的 UserProfile, ShoppingCart, FavoriteList
+            UserProfile.objects.create(user=user)
+            ShoppingCart.objects.create(user=user)
+            FavoriteList.objects.create(user=user)
+
         return user
 
     def create_superuser(self, username, email=None, password=None, **extra_fields):
@@ -21,15 +30,16 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('超级用户必须有is_superuser=True')
 
         return self.create_user(username, email, password, **extra_fields)
+    
 
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(verbose_name="用户名称", max_length=50, unique=True, blank=False)
-    sex = models.CharField(verbose_name="性别", max_length=10, blank=True)
+    sex = models.CharField(verbose_name="性别", max_length=10, blank=True,default = "未填写")
     password = models.CharField(verbose_name="密码", max_length=255, blank=False)
     email = models.EmailField(verbose_name="邮箱", unique=True, blank=True)
-    phone_number = models.CharField(verbose_name="电话号码", max_length=20, blank=False)
-    tel = models.CharField(verbose_name="联系方式", max_length=20, blank=True)
-    address = models.CharField(verbose_name="地址", max_length=255, blank=True, default="")
+    phone_number = models.CharField(verbose_name="电话号码", max_length=20, blank=False,default = "未填写")
+    tel = models.CharField(verbose_name="联系方式", max_length=20, blank=True,default = "未填写")
+    address = models.CharField(verbose_name="地址", max_length=255, blank=True, default = "未填写")
     registration_date = models.DateTimeField(verbose_name="注册时间", auto_now_add=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -42,6 +52,30 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
 
+    # 在删除用户时，自动删除相关联的表项
+    def delete(self, *args, **kwargs):
+        # 在删除用户之前，检查相关对象是否存在
+        try:
+            if hasattr(self, 'profile'):
+                self.profile.delete()  # 删除 UserProfile
+        except ObjectDoesNotExist:
+            pass  # 如果对象不存在，忽略异常
+
+        try:
+            if hasattr(self, 'shoppingcart'):
+                self.shoppingcart.delete()  # 删除 ShoppingCart
+        except ObjectDoesNotExist:
+            pass
+
+        try:
+            if hasattr(self, 'favoritelist'):
+                self.favoritelist.delete()  # 删除 FavoriteList
+        except ObjectDoesNotExist:
+            pass
+
+        # 调用父类的删除方法
+        super().delete(*args, **kwargs)
+
 class Category(models.Model):
     category_name = models.CharField(verbose_name="分类名称", max_length=100)
     description = models.TextField(verbose_name="分类描述", blank=True)
@@ -52,7 +86,7 @@ class Category(models.Model):
 
 class Product(models.Model):
     product_id = models.AutoField(verbose_name="商品ID", primary_key=True)
-    product_name = models.CharField(verbose_name="商品名称", max_length=100)
+    product_name = models.CharField(verbose_name="商品名称", max_length=100,default="Unnamed Product")
     image = models.ImageField(verbose_name="商品图片", upload_to='product_images/', default='avatars/default.png')
     click = models.IntegerField(verbose_name="点击量", default=0)
     unit = models.CharField(verbose_name="单位", max_length=20, default="个")
@@ -120,7 +154,7 @@ class Order(models.Model):
 class OrderDetail(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, verbose_name="订单", related_name="order_details")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="商品")
-    product_name = models.CharField(verbose_name="商品名称", max_length=100)  # 记录下商品的名称
+    product_name = models.CharField(verbose_name="商品名称", max_length=100,default="Unnamed Product")  # 记录下商品的名称
     quantity = models.IntegerField(verbose_name="数量")
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="单价")
     discount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="折扣", default=0.00)  # 商品折扣
@@ -160,8 +194,8 @@ class GoodsBrowser(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     avatar = models.ImageField(upload_to='avatars/', default='avatars/default.png', verbose_name="头像")
-    birthdate = models.DateField(null=True, blank=True, verbose_name="生日")
-    bio = models.TextField(blank=True, verbose_name="个人简介")
+    birthdate = models.DateField(null=True, blank=True, verbose_name="生日",default=datetime.date(2000, 1, 1))
+    bio = models.TextField(blank=True, verbose_name="个人简介",default = "未填写")
 
     def __str__(self):
         return f"{self.user.username}'s profile"

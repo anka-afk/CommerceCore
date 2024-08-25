@@ -101,7 +101,8 @@
           <button @click="clearPurchaseHistory" class="btn btn-warning">
             清除购买记录
           </button>
-          <button @click="confirmAccountDeletion" class="btn btn-danger">
+          <!-- 注销账号按钮 -->
+          <button @click="confirmDeleteAccount" class="btn btn-danger">
             注销账号
           </button>
         </div>
@@ -109,6 +110,7 @@
     </section>
   </BaseTemplate>
 </template>
+
 <script>
 import axios from "axios";
 
@@ -121,12 +123,54 @@ export default {
       isEditing: false,
       tempAvatarUrl: null, // 临时存储新头像的URL
       isHovering: false, // 控制头像悬停效果
+      password1: "",
+      password2: "",
+      errorMessage: "",
     };
   },
   mounted() {
     this.fetchUserInfo();
   },
   methods: {
+    // 账户注销确认提示
+    confirmDeleteAccount() {
+      this.password1 = prompt("请输入密码以确认注销账号：", "");
+      this.password2 = prompt("请再次输入密码以确认注销账号：", "");
+
+      if (this.password1 === null || this.password2 === null) {
+        this.errorMessage = "操作已取消";
+        return;
+      }
+
+      if (this.password1 !== this.password2) {
+        alert("两次输入的密码不一致，请重试");
+        return;
+      }
+
+      if (confirm("您确定要注销您的账号吗？此操作无法撤销！")) {
+        this.deleteAccount();
+      }
+    },
+
+    deleteAccount() {
+      axios
+        .post("http://localhost:8000/api/user/delete-account/", {
+          password: this.password1,
+        })
+        .then(() => {
+          // 清除本地存储中的 token
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+
+          // 强制刷新页面清除缓存
+          location.reload();
+        })
+        .catch((error) => {
+          this.errorMessage = error.response.data.error || "注销失败，请重试";
+          alert(this.errorMessage);
+        });
+    },
+
     fetchUserInfo() {
       axios
         .get("http://localhost:8000/api/user/profile/")
@@ -151,15 +195,20 @@ export default {
     },
     saveChanges() {
       const formData = new FormData();
+
       if (this.tempAvatarFile) {
         formData.append("avatar", this.tempAvatarFile);
       }
+
+      // 将用户基本信息添加到formData
       formData.append("username", this.editableUser.username);
       formData.append("sex", this.editableUser.sex);
       formData.append("email", this.editableUser.email);
       formData.append("phone_number", this.editableUser.phone_number);
       formData.append("tel", this.editableUser.tel);
       formData.append("address", this.editableUser.address);
+
+      // 将profile相关的字段添加到formData中
       formData.append("profile.birthdate", this.editableUserProfile.birthdate);
       formData.append("profile.bio", this.editableUserProfile.bio);
 
@@ -208,6 +257,7 @@ export default {
 </script>
 
 <style scoped>
+/* 与之前相同的样式 */
 .account-section {
   flex: 1;
   padding: 2rem;

@@ -1,19 +1,19 @@
-# serializers.py
 from rest_framework import serializers
-from .models import Product, ShoppingCart, CartItem,User,UserProfile,Category,FavoriteItem, FavoriteList,Announcement,Comment
-
+from .models import Product, ShoppingCart, CartItem, User, UserProfile, Category, FavoriteItem, FavoriteList, Announcement, Comment
+from django.db import transaction
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
+
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer()  # 使用嵌套序列化器
 
     class Meta:
         model = Product
         fields = '__all__'
-        
+
 class CartItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
 
@@ -33,36 +33,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ['avatar', 'birthdate', 'bio']
 
-
 class UserSerializer(serializers.ModelSerializer):
-    
-
     profile = UserProfileSerializer()
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone_number', 'tel', 'address', 'sex', 'profile','registration_date']
+        fields = ['username', 'email', 'phone_number', 'tel', 'address', 'sex', 'profile', 'registration_date']
 
     def update(self, instance, validated_data):
-        # 更新用户模型字段
-        profile_data = validated_data.pop('profile', {})
-        instance.username = validated_data.get('username', instance.username)
-        instance.email = validated_data.get('email', instance.email)
-        instance.phone_number = validated_data.get('phone_number', instance.phone_number)
-        instance.tel = validated_data.get('tel', instance.tel)
-        instance.address = validated_data.get('address', instance.address)
-        instance.sex = validated_data.get('sex', instance.sex)
-        instance.save()
+        profile_data = validated_data.pop('profile', None)
+        instance = super().update(instance, validated_data)
 
-        # 更新用户的profile字段
-        profile = instance.profile
-        profile.avatar = profile_data.get('avatar', profile.avatar)
-        profile.birthdate = profile_data.get('birthdate', profile.birthdate)
-        profile.bio = profile_data.get('bio', profile.bio)
-        profile.save()
+        if profile_data:
+            profile, created = UserProfile.objects.get_or_create(user=instance)
+            for attr, value in profile_data.items():
+                setattr(profile, attr, value)
+            profile.save()
 
         return instance
-    
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
@@ -88,13 +77,20 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('confirm_password')
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            password=validated_data['password'],
-            email=validated_data['email'],
-            phone_number=validated_data['phone_number']
-        )
-        UserProfile.objects.create(user=user)
+        
+        # 使用事务，确保原子性
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=validated_data['username'],
+                password=validated_data['password'],
+                email=validated_data['email'],
+                phone_number=validated_data['phone_number']
+            )
+
+            # 检查是否已经有 UserProfile，如果没有则创建
+            if not hasattr(user, 'profile'):
+                UserProfile.objects.create(user=user)
+            
         return user
 
 class FavoriteItemSerializer(serializers.ModelSerializer):
@@ -110,12 +106,12 @@ class FavoriteListSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoriteList
         fields = ['user', 'creation_date', 'items']
-        
+
 class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = '__all__'
-        
+
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
 

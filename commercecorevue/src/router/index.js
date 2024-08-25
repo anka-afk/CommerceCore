@@ -12,7 +12,7 @@ import SettingsPage from "../components/SettingsPage.vue";
 import PaymentPage from "../components/PaymentPage.vue";
 import ForgetPasswordPage from "../components/ForgetPasswordPage.vue";
 import ProductDetailPage from "../components/ProductDetailPage.vue";
-
+import TestPage from "../components/TestPage.vue";
 const routes = [
   {
     path: "/products",
@@ -84,6 +84,11 @@ const routes = [
     name: "ProductDetail",
     component: ProductDetailPage,
   },
+  {
+    path: "/test",
+    name: "TestPage",
+    component: TestPage,
+  },
 ];
 
 const router = createRouter({
@@ -91,13 +96,12 @@ const router = createRouter({
   routes,
 });
 
+// 路由守卫
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("access_token");
 
   // 列出所有不需要认证就能访问的路由名称
   const publicPages = ["LoginPage", "RegisterPage", "ForgetPasswordPage"];
-
-  // 检查当前路由是否属于公共页面
   const isPublicPage = publicPages.includes(to.name);
 
   // 如果没有 token 且目标页面不是公共页面，则跳转到登录页面
