@@ -1,0 +1,8 @@
+{% extends "admin/base.html" %} {% block title %}隙间小铺后端管理{% endblock %}
+{% block branding %}
+<h1 id="site-name">
+  <a href="{% url 'admin:index' %}">隙间小铺管理</a>
+</h1>
+{% endblock %} {% block extrahead %} {{ block.super }}
+<link rel="icon" href="{% static './logo.png' %}" type="image/x-icon" />
+{% endblock %}

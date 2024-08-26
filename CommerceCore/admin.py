@@ -1,27 +1,24 @@
 from django.contrib import admin
-from .models import User, Category, Product, Order, OrderDetail, ShoppingCart, CartItem,UserProfile,FavoriteList, FavoriteItem,GoodsBrowser,Announcement,Comment
 from django import forms
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
+from .models import (
+    User, Category, Product, Order, OrderDetail, ShoppingCart, 
+    CartItem, UserProfile, FavoriteList, FavoriteItem, 
+    GoodsBrowser, Announcement, Comment
+)
 
-admin.site.register(User)
-admin.site.register(Category)
-admin.site.register(Product)
-admin.site.register(Order)
-admin.site.register(OrderDetail)
-admin.site.register(ShoppingCart)
-admin.site.register(CartItem)
-admin.site.register(UserProfile)
-admin.site.register(FavoriteList)
-admin.site.register(FavoriteItem)
-admin.site.register(Announcement)
-admin.site.register(GoodsBrowser)
-admin.site.register(Comment)
+# 自定义 AdminSite
+class MyAdminSite(admin.AdminSite):
+    site_header = "隙间小铺管理界面"  # 页面左上角的标题
+    site_title = "隙间小铺后端管理"  # 浏览器选项卡的标题
 
-# 取消默认的 User 注册
-admin.site.unregister(User)
+# 实例化自定义的 AdminSite
+my_admin_site = MyAdminSite(name='myadmin')
 
-# 自定义用户创建表单，确保密码正确加密
+
+
+# 自定义用户创建表单
 class UserCreationForm(forms.ModelForm):
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
@@ -31,7 +28,6 @@ class UserCreationForm(forms.ModelForm):
         fields = ('username', 'email')
 
     def clean_password2(self):
-        # 确保两次输入的密码一致
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
@@ -39,14 +35,13 @@ class UserCreationForm(forms.ModelForm):
         return password2
 
     def save(self, commit=True):
-        # 确保密码经过加密后存储
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
         return user
 
-# 自定义用户编辑表单，确保显示和编辑时正确处理密码
+# 自定义用户编辑表单
 class UserChangeForm(forms.ModelForm):
     password = ReadOnlyPasswordHashField()
 
@@ -55,10 +50,9 @@ class UserChangeForm(forms.ModelForm):
         fields = ('username', 'email', 'password', 'is_active', 'is_staff')
 
     def clean_password(self):
-        # 无论用户是否更新密码，都返回初始值
         return self.initial["password"]
 
-# 自定义UserAdmin，将自定义的表单类集成
+# 自定义 UserAdmin
 class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
@@ -79,5 +73,25 @@ class UserAdmin(BaseUserAdmin):
     ordering = ('username',)
     filter_horizontal = ('groups', 'user_permissions',)
 
-# 重新注册 User 模型和自定义的 UserAdmin
-admin.site.register(User, UserAdmin)
+# 使用自定义的 AdminSite 注册模型
+my_admin_site.register(User, UserAdmin)
+my_admin_site.register(Category)
+my_admin_site.register(Product)
+my_admin_site.register(Order)
+my_admin_site.register(OrderDetail)
+my_admin_site.register(ShoppingCart)
+my_admin_site.register(CartItem)
+my_admin_site.register(UserProfile)
+my_admin_site.register(FavoriteList)
+my_admin_site.register(FavoriteItem)
+my_admin_site.register(Announcement)
+my_admin_site.register(GoodsBrowser)
+my_admin_site.register(Comment)
+
+# 更新 urls.py 中的配置
+# 在你的 urls.py 中，确保使用 my_admin_site
+# from .admin import my_admin_site
+# urlpatterns = [
+#     path('admin/', my_admin_site.urls),
+#     # 其他路径...
+# ]

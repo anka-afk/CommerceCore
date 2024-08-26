@@ -25,6 +25,7 @@ from .views import (
 )
 from django.views.static import serve as static_serve
 from rest_framework_simplejwt.views import TokenRefreshView
+from .admin import my_admin_site  # 导入你自定义的AdminSite
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet)
@@ -38,7 +39,7 @@ router.register(r'comments', CommentViewSet, basename='comment')
 router.register(r'browsing-history', GoodsBrowserViewSet, basename='browsing-history')
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path('admin/', my_admin_site.urls),  # 使用自定义的AdminSite
     path('products/', views.product_list, name='product_list'),
     path('productsver2/', views.product_list_ver2, name='product_list_ver2'),
     path('', views.home, name='home'),
