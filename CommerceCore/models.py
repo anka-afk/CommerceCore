@@ -46,7 +46,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    USERNAME_FIELD = 'username'  # 可以改为 'email' 如果你想用邮箱作为登录标识符
+    USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']  # 必填字段，除了 USERNAME_FIELD
 
     def __str__(self):
@@ -98,6 +98,7 @@ class Product(models.Model):
     listing_date = models.DateTimeField(verbose_name="上架时间", auto_now_add=True)
     suggest = models.BooleanField(verbose_name="推荐", default=False)
     score = models.IntegerField(verbose_name="评分", default=0)
+    score_total = models.IntegerField(verbose_name="总评分", default=0)
     sales = models.IntegerField(verbose_name="销量", default=0)
     rating_count = models.IntegerField(verbose_name="评分人数", default=0)
     def __str__(self):
@@ -112,6 +113,7 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.product.product_name} - {self.rating}星"
+
 class Order(models.Model):
     # 状态名称及描述
     SHIPPED = 'shipped'  # 已发货

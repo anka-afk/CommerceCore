@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Category, Product, Order, OrderDetail, ShoppingCart, CartItem,UserProfile,FavoriteList, FavoriteItem,Announcement
+from .models import User, Category, Product, Order, OrderDetail, ShoppingCart, CartItem,UserProfile,FavoriteList, FavoriteItem,GoodsBrowser,Announcement,Comment
 from django import forms
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
@@ -15,7 +15,8 @@ admin.site.register(UserProfile)
 admin.site.register(FavoriteList)
 admin.site.register(FavoriteItem)
 admin.site.register(Announcement)
-
+admin.site.register(GoodsBrowser)
+admin.site.register(Comment)
 
 # 取消默认的 User 注册
 admin.site.unregister(User)

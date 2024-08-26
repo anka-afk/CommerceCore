@@ -1,5 +1,5 @@
 <template>
-  <BaseTemplate>
+  <BaseTemplate v-if="product">
     <section class="product-detail-section">
       <button class="btn-back" @click="goBack">返回上一页</button>
 
@@ -19,7 +19,6 @@
           <p v-if="product.suggest" class="recommended-label">推荐</p>
           <p>评分: {{ product.score }} ({{ product.rating_count }} 人评分)</p>
           <button class="btn-favorite" @click="addToFavorites">收藏</button>
-          <!-- 新增收藏按钮 -->
         </div>
       </div>
 
@@ -30,19 +29,29 @@
 
       <div class="comments-section">
         <h3>用户评论</h3>
-        <div
-          v-for="comment in product.comments"
-          :key="comment.id"
-          class="comment"
-        >
-          <strong>{{ comment.user }}</strong>
-          <p>评分: {{ comment.rating }}星</p>
-          <p>{{ comment.text }}</p>
-          <p class="comment-date">评论时间: {{ comment.created_at }}</p>
+        <div v-if="product.comments && product.comments.length > 0">
+          <div
+            v-for="comment in product.comments"
+            :key="comment.id"
+            class="comment-card"
+          >
+            <div class="comment-header">
+              <strong>{{ comment.user }}</strong>
+              <span class="comment-rating">评分: {{ comment.rating }}星</span>
+            </div>
+            <p>{{ comment.text }}</p>
+            <p class="comment-date">
+              评论时间: {{ formatDate(comment.created_at) }}
+            </p>
+          </div>
+        </div>
+        <div v-else>
+          <p>还没有评论，快来留下您的第一条评论吧！</p>
         </div>
       </div>
     </section>
   </BaseTemplate>
+  <div v-else>加载中...</div>
 </template>
 
 <script>
@@ -53,11 +62,13 @@ export default {
   components: { BaseTemplate },
   data() {
     return {
-      product: {},
+      product: null, // 初始化为 null
+      user: null, // 用于存储用户信息
     };
   },
   mounted() {
-    this.fetchProductDetails();
+    this.fetchUserInfo(); // 在挂载时获取用户信息
+    this.fetchProductDetails(); // 获取产品详情
   },
   methods: {
     fetchProductDetails() {
@@ -66,11 +77,39 @@ export default {
         .get(`http://localhost:8000/api/products/${productId}/`)
         .then((response) => {
           this.product = response.data;
+          this.recordBrowsingHistory(); // 记录浏览历史
         })
         .catch((error) => {
           console.error("Failed to fetch product details:", error);
         });
     },
+
+    fetchUserInfo() {
+      axios
+        .get("http://localhost:8000/api/user/profile/")
+        .then((response) => {
+          this.user = response.data; // 存储用户信息
+        })
+        .catch((error) => {
+          console.error("Failed to fetch user profile:", error);
+        });
+    },
+
+    recordBrowsingHistory() {
+      if (this.user && this.product) {
+        axios
+          .post("http://localhost:8000/api/browsing-history/record/", {
+            product: this.product.product_id, // 传递产品ID
+          })
+          .then(() => {
+            console.log("Browsing history recorded successfully.");
+          })
+          .catch((error) => {
+            console.error("Failed to record browsing history:", error);
+          });
+      }
+    },
+
     goBack() {
       this.$router.go(-1);
     },
@@ -96,38 +135,7 @@ export default {
 </script>
 
 <style scoped>
-.product-detail-section {
-  padding: 2rem;
-}
-
-.product-container {
-  display: flex;
-  gap: 2rem;
-}
-
-.product-image {
-  width: 300px;
-  height: 300px;
-  object-fit: cover;
-  border-radius: 10px;
-}
-
-.product-info {
-  flex-grow: 1;
-}
-
-.comments-section {
-  margin-top: 2rem;
-}
-
-.comment {
-  margin-bottom: 1.5rem;
-}
-
-.comment-date {
-  color: gray;
-  font-size: 0.9rem;
-}
+/* 样式部分保持不变 */
 .product-detail-section {
   padding: 2rem;
 }
@@ -173,8 +181,13 @@ export default {
   border-radius: 10px;
 }
 
-.comment {
+.comment-card {
   margin-bottom: 1.5rem;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
 }
 
 .comment-date {

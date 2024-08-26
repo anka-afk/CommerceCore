@@ -5,7 +5,9 @@
       <div class="center-content">
         <h1>欢迎来到隙间小铺</h1>
         <p>支付代价...</p>
-        <button class="btn btn-primary btn-lg">立即购物</button>
+        <button class="btn btn-primary btn-lg" @click="goToStore">
+          前往商店
+        </button>
       </div>
     </section>
 
@@ -126,6 +128,9 @@ export default {
     this.fetchProducts();
   },
   methods: {
+    goToStore() {
+      this.$router.push("/products");
+    },
     fetchProducts() {
       axios
         .get("http://127.0.0.1:8000/api/products/")
@@ -357,7 +362,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7); /* 深色背景遮罩 */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -365,34 +370,44 @@ export default {
 }
 
 .modal-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 600px;
-  width: 100%;
+  background: rgba(255, 255, 255, 0.9); /* 半透明白色背景 */
+  backdrop-filter: blur(20px); /* 毛玻璃效果 */
+  border-radius: 15px; /* 圆角 */
+  padding: 30px; /* 内边距 */
+  max-width: 90%; /* 最大宽度为90% */
+  max-height: 90%; /* 最大高度为90% */
+  width: auto; /* 宽度根据内容调整 */
+  height: auto; /* 高度根据内容调整 */
   text-align: center;
-  overflow-y: auto;
-  max-height: 80vh;
-  backdrop-filter: blur(10px);
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3); /* 阴影效果 */
+  overflow-y: auto; /* 垂直方向滚动条 */
+  overflow-x: hidden; /* 禁止水平方向滚动条 */
+  transition: all 0.3s ease; /* 平滑过渡效果 */
 }
 
-/* 模态框内容图片 */
+.modal-content.show {
+  transform: translateY(0); /* 显示时恢复位置 */
+}
+
 .modal-image {
   max-width: 100%;
   height: auto;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  border-radius: 10px; /* 圆角图片 */
 }
 
 .modal-details {
   text-align: left;
+  color: #333; /* 深色文字 */
 }
 
 .details-container {
-  max-height: 150px;
-  overflow-y: auto;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  margin-bottom: 15px;
+  max-height: 200px; /* 最大高度200px */
+  overflow-y: auto; /* 保持垂直滚动条 */
+  padding: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* 边框 */
+  border-radius: 10px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.5); /* 半透明背景 */
 }
 </style>

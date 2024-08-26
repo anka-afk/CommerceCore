@@ -25,6 +25,11 @@
             :key="detail.id"
             class="order-detail-item"
           >
+            <img
+              :src="getProductImageUrl(detail.product_image)"
+              alt="商品图片"
+              class="product-image"
+            />
             <p><strong>商品名称：</strong>{{ detail.product_name }}</p>
             <p><strong>数量：</strong>{{ detail.quantity }}</p>
             <p><strong>单价：</strong>{{ detail.unit_price }} 元</p>
@@ -41,6 +46,13 @@
               }}
               元
             </p>
+            <button
+              v-if="order.order_status === 'paied'"
+              class="btn btn-primary"
+              @click="goToReview(detail.product_id)"
+            >
+              评价
+            </button>
           </div>
         </div>
       </div>
@@ -66,14 +78,12 @@ export default {
         .get("http://localhost:8000/api/orders/")
         .then((response) => {
           console.log(response.data); // 打印API返回的数据
-
           this.orders = response.data;
         })
         .catch((error) => {
           console.error("Failed to fetch orders:", error);
         });
     },
-
     formatDate(date) {
       return new Date(date).toLocaleString();
     },
@@ -91,6 +101,19 @@ export default {
           return "已取消";
         default:
           return "未知状态";
+      }
+    },
+    getProductImageUrl(imagePath) {
+      return `http://localhost:8000${imagePath}`;
+    },
+    goToReview(productId) {
+      if (productId) {
+        this.$router.push({
+          name: "ReviewPage",
+          params: { productId }, // 确保传递正确的参数
+        });
+      } else {
+        console.error("Product ID is missing.");
       }
     },
   },
@@ -133,9 +156,22 @@ export default {
   margin-bottom: 1rem;
   padding: 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.product-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
 }
 
 .order-detail-item:last-child {
   border-bottom: none;
+}
+
+.btn {
+  margin-left: auto;
 }
 </style>

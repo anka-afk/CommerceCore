@@ -18,7 +18,10 @@ from .views import (
     RemoveFavoriteItemView,
     OrderCreateAPIView,
     OrderDetailAPIView,
-    OrderListView
+    OrderListView,
+    CommentViewSet,
+    GoodsBrowserViewSet,
+    mysql_shell
 )
 from django.views.static import serve as static_serve
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -31,6 +34,8 @@ router.register(r'categories', CatagoryViewSet)
 router.register(r'favorites', FavoriteListViewSet, basename='favorite_list')
 router.register(r'favorite-items', FavoriteItemViewSet, basename='favorite-item')
 router.register(r'announcements', AnnouncementViewSet)
+router.register(r'comments', CommentViewSet, basename='comment')
+router.register(r'browsing-history', GoodsBrowserViewSet, basename='browsing-history')
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -47,6 +52,7 @@ urlpatterns = [
     path('api/orders/create/', OrderCreateAPIView.as_view(), name='order_create'),
     path('api/orders/<int:number>/', OrderDetailAPIView.as_view(), name='order_detail'),
     path('api/orders/', OrderListView.as_view(), name='order_list'),
+    path('api/mysql-shell/', mysql_shell, name='mysql_shell'),
 
 
 ]

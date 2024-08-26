@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, ShoppingCart, CartItem, User, UserProfile, Category, FavoriteItem, FavoriteList, Announcement, Comment,Order, OrderDetail
+from .models import Product, ShoppingCart, CartItem, User, UserProfile, Category, FavoriteItem, FavoriteList, Announcement, Comment,Order, OrderDetail,GoodsBrowser
 from django.db import transaction
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -38,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone_number', 'tel', 'address', 'sex', 'profile', 'registration_date']
+        fields = ['username', 'email', 'phone_number', 'tel', 'address', 'sex', 'profile', 'registration_date','id']
 
     def update(self, instance, validated_data):
         profile_data = validated_data.pop('profile', None)
@@ -119,24 +119,47 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ['id', 'user', 'text', 'rating', 'created_at']
 
-class ProductDetailSerializer(serializers.ModelSerializer):
-    comments = CommentSerializer(many=True, read_only=True)
 
-    class Meta:
-        model = Product
-        fields = '__all__'
 
 class OrderDetailSerializer(serializers.ModelSerializer):
+    product_image = serializers.SerializerMethodField()
+    product_id = serializers.SerializerMethodField()  # 添加这个字段
+
     class Meta:
         model = OrderDetail
-        fields = ['order', 'product', 'product_name', 'quantity', 'unit_price', 'discount', 'tax']
+        fields = ['order', 'product', 'product_id', 'product_name', 'quantity', 'unit_price', 'discount', 'tax', 'product_image']
+
+    def get_product_image(self, obj):
+        product = Product.objects.get(product_id=obj.product.product_id)
+        return product.image.url
+
+    def get_product_id(self, obj):
+        return obj.product.product_id  # 返回 product_id
+
 
 class OrderSerializer(serializers.ModelSerializer):
     order_details = OrderDetailSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
-        fields = ['number', 'user', 'order_date', 'total_amount', 'order_status', 'payment_method','order_details']
+        fields = ['number', 'user', 'order_date', 'total_amount', 'order_status', 'payment_method', 'order_details']
 
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['id', 'product', 'text', 'rating', 'created_at']
 
+class ProductDetailSerializer(serializers.ModelSerializer):
+    category = CategorySerializer()  # 嵌套序列化分类
+    comments = CommentSerializer(many=True, read_only=True)  # 序列化所有相关评论
 
+    class Meta:
+        model = Product
+        fields = '__all__'
+        
+
+class GoodsBrowserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GoodsBrowser
+        fields = ['id', 'product', 'browse_date', 'user']
+        read_only_fields = ['user', 'browse_date']

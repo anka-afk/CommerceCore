@@ -190,6 +190,10 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': False,  # 当用户使用 refresh token 刷新时，是否更新用户的 last_login 字段
 
 }
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+]
 
 # settings.py
 APPEND_SLASH = False

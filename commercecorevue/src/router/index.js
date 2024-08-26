@@ -14,6 +14,8 @@ import ProductDetailPage from "../components/ProductDetailPage.vue";
 import TestPage from "../components/TestPage.vue";
 import OrderConfirmation from "../components/OrderConfirmation.vue";
 import PaymentPage from "../components/PaymentPage.vue";
+import ReviewPage from "../components/ReviewPage.vue";
+import BrowsingHistory from "../components/BrowsingHistory.vue";
 
 const routes = [
   {
@@ -100,6 +102,16 @@ const routes = [
     path: "/orders",
     name: "MyOrders",
     component: () => import("@/components/MyOrders.vue"),
+  },
+  {
+    path: "/review/:productId",
+    name: "ReviewPage",
+    component: ReviewPage,
+  },
+  {
+    path: "/browsing-history",
+    name: "BrowsingHistory",
+    component: BrowsingHistory,
   },
 ];
 

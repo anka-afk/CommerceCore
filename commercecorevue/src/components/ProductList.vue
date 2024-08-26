@@ -2,7 +2,11 @@
   <BaseTemplate>
     <!-- 搜索和筛选 -->
     <div class="search-filter-container">
-      <select v-model="selectedCategory" @change="fetchProducts">
+      <select
+        v-model="selectedCategory"
+        @change="fetchProducts"
+        class="glass-select"
+      >
         <option value="">所有分类</option>
         <option
           v-for="category in categories"
@@ -16,7 +20,20 @@
         v-model="searchTerm"
         placeholder="搜索商品..."
         @input="fetchProducts"
+        class="glass-input"
       />
+      <select v-model="sortOption" @change="fetchProducts" class="glass-select">
+        <option value="click">按点击量排序</option>
+        <option value="name">按名称排序</option>
+        <option value="price">按价格排序</option>
+        <option value="stock">按库存数量排序</option>
+        <option value="listing_date">按上架时间排序</option>
+        <option value="score">按评分排序</option>
+      </select>
+      <select v-model="sortOrder" @change="fetchProducts" class="glass-select">
+        <option value="asc">升序</option>
+        <option value="desc">降序</option>
+      </select>
     </div>
 
     <!-- 产品展示 -->
@@ -59,7 +76,7 @@
                 class="btn btn-secondary mt-2"
                 @click="showProductDetails(product)"
               >
-                > 查看详情
+                查看详情
               </button>
             </div>
           </div>
@@ -125,12 +142,6 @@
         下一页 &gt;
       </button>
     </div>
-    <!-- 页脚 -->
-    <footer class="footer">
-      <div class="container">
-        <span>&copy; 2024 anka. 版权所有.</span>
-      </div>
-    </footer>
   </BaseTemplate>
 </template>
 
@@ -146,16 +157,18 @@ export default {
       searchTerm: "",
       selectedCategory: "",
       currentPage: 1,
-      itemsPerPage: 9,
+      itemsPerPage: 16, // 每页显示16个物品
       mediaUrl: "http://localhost:8000",
-      showModal: false, // 控制模态框显示
-      selectedProduct: null, // 当前选中的商品
-      showDropdown: false,
+      showModal: false,
+      selectedProduct: null,
+      sortOption: "click",
+      sortOrder: "asc",
     };
   },
   computed: {
     filteredProducts() {
       let filtered = this.products;
+
       if (this.selectedCategory) {
         filtered = filtered.filter(
           (product) => product.category === parseInt(this.selectedCategory)
@@ -166,14 +179,44 @@ export default {
           product.product_name.includes(this.searchTerm)
         );
       }
+
+      // 根据选择的排序选项和排序方式排序产品
+      filtered.sort((a, b) => {
+        let result = 0;
+        switch (this.sortOption) {
+          case "click":
+            result = b.click - a.click;
+            break;
+          case "name":
+            result = a.product_name.localeCompare(b.product_name);
+            break;
+          case "price":
+            result = a.price - b.price;
+            break;
+          case "stock":
+            result = b.stock_quantity - a.stock_quantity;
+            break;
+          case "listing_date":
+            result = new Date(b.listing_date) - new Date(a.listing_date);
+            break;
+          case "score":
+            result = b.score - a.score;
+            break;
+        }
+        return this.sortOrder === "asc" ? result : -result;
+      });
+
       return filtered;
     },
     totalPages() {
       return Math.ceil(this.filteredProducts.length / this.itemsPerPage);
     },
     paginatedProducts() {
-      const start = (this.currentPage - 1) * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
+      const start = Math.max((this.currentPage - 1) * this.itemsPerPage, 0);
+      const end = Math.min(
+        start + this.itemsPerPage,
+        this.filteredProducts.length
+      );
       return this.filteredProducts.slice(start, end);
     },
   },
@@ -194,9 +237,8 @@ export default {
     },
 
     fetchCategories() {
-      // 调用后端获取分类数据的API
       axios
-        .get("http://127.0.0.1:8000/api/categories/") // 需要确保后端API存在这个endpoint
+        .get("http://127.0.0.1:8000/api/categories/")
         .then((response) => {
           this.categories = response.data;
         })
@@ -205,7 +247,7 @@ export default {
         });
     },
     handleImageError(event) {
-      event.target.src = "./assets/default.png"; // 使用默认图片路径替换损坏的图片
+      event.target.src = "./assets/default.png";
     },
     prevPage() {
       if (this.currentPage > 1) {
@@ -221,7 +263,7 @@ export default {
       axios
         .post("http://127.0.0.1:8000/api/cart/add_item/", {
           product_id: product.product_id,
-          quantity: 1, // 默认添加一件商品到购物车
+          quantity: 1,
         })
         .then(() => {
           alert("商品已添加到购物车");
@@ -232,14 +274,11 @@ export default {
         });
     },
     showProductDetails1(product) {
-      this.selectedProduct = product;
-      this.showModal = true;
-    },
-    showProductDetails(product) {
-      this.$router.push({
-        name: "ProductDetail",
-        params: { id: product.product_id },
-      });
+      if (product && !product.empty) {
+        // 确保空元素不会触发模态框
+        this.selectedProduct = product;
+        this.showModal = true;
+      }
     },
     closeModal() {
       this.showModal = false;
@@ -248,6 +287,12 @@ export default {
     formatDate(dateString) {
       const options = { year: "numeric", month: "long", day: "numeric" };
       return new Date(dateString).toLocaleDateString(undefined, options);
+    },
+    showProductDetails(product) {
+      this.$router.push({
+        name: "ProductDetail",
+        params: { id: product.product_id },
+      });
     },
   },
   components: { BaseTemplate },
@@ -264,11 +309,28 @@ export default {
   gap: 1rem;
 }
 
-.search-filter-container select,
-.search-filter-container input {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+/* 胶囊型搜索框和筛选框 */
+.glass-input,
+.glass-select {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: #333;
+  font-size: 1rem;
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.glass-input::placeholder {
+  color: #aaa;
+}
+
+.glass-input:focus,
+.glass-select:focus {
+  outline: none;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
 }
 
 /* 添加产品价格样式 */
@@ -362,20 +424,18 @@ export default {
 
 /* 容器居中，设置最大宽度 */
 .product-container {
-  display: flex;
-  flex-wrap: wrap; /* 允许换行，使产品在多行展示 */
-  justify-content: center; /* 子元素水平居中 */
-  align-items: flex-start; /* 子元素顶部对齐 */
-  max-width: 1200px; /* 根据需要调整最大宽度 */
-  gap: 20px; /* 增加卡片之间的间距 */
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4列布局 */
+  grid-gap: 20px;
+  max-width: 1200px;
   margin: 0 auto; /* 居中对齐 */
 }
 
-/* 商品卡片容器 */
 .product-card-container {
-  flex: 0 1 calc(33.333% - 20px); /* 每行展示3个卡片，减去间距 */
-  box-sizing: border-box; /* 确保 padding 和 border 不影响宽度计算 */
-  margin-bottom: 20px; /* 控制每行卡片之间的垂直间距 */
+  height: 100%; /* 使卡片容器高度自适应 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 @media (max-width: 1200px) {
@@ -411,6 +471,10 @@ export default {
   flex-direction: column;
   justify-content: space-between;
   min-height: 420px;
+}
+
+.product-card-container.empty {
+  visibility: hidden; /* 隐藏空元素 */
 }
 
 .card-body {
@@ -459,21 +523,31 @@ export default {
   background-color: #007bff;
   border: none;
   color: white;
-  padding: 0.5rem;
-  border-radius: 50%;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
   cursor: pointer;
   margin: 0 1rem;
+  font-size: 1.25rem;
 }
 
-.slider-arrow:hover {
+.slider-arrow:disabled {
+  background-color: #ddd; /* 禁用按钮颜色 */
+}
+
+.slider-arrow:hover:enabled {
   background-color: #0056b3;
 }
-
 /* 滑动条样式 */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 0 1rem;
+}
+
+.pagination span {
+  font-size: 1.25rem;
+  margin: 0 0.5rem;
 }
 
 .dot {
